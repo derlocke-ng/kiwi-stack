@@ -90,7 +90,7 @@ relative to the bundle, `host-units/<unit>`, `quadlets/<unit>`,
 
 ## Status
 
-0.1.0: `lib.sh` and the command as kiwi-server 2.5.0 embeds them, unchanged.
+0.1.0: `lib.sh` and the command as kiwi-server 2.6.0 embeds them, unchanged.
 kiwi-server is still where they are developed; its `tools/split-sync.sh`
 copies them here and checks for drift, until this repository is tagged and
 vendored back. Nothing here has run on hardware yet.
