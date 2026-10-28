@@ -2,7 +2,7 @@
 # kiwi-stack installer: the CLI to /usr/local/bin, its library to
 # /usr/local/lib/kiwi-stack/lib.sh (where the CLI looks, and where a kiwi-server
 # role script puts the same two files).
-#   sudo ./install.sh install|update|uninstall
+#   sudo ./install.sh install|update|uninstall [--purge]   (a kiwi-updater installer: system scope, /usr/local)
 set -euo pipefail
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PREFIX=${KIWI_PREFIX:-/usr/local}
