@@ -92,9 +92,9 @@ relative to the bundle, `host-units/<unit>`, `quadlets/<unit>`,
 
 0.2.0: `lib.sh` and the command as kiwi-server 2.7.0 embeds them, with the
 fixes of the first hardware round (CHANGELOG.md); they have applied a master
-and two nodes. kiwi-server is still where they are developed; its
-`tools/split-sync.sh` copies them here and checks for drift, until this
-repository is vendored back.
+and two nodes. They are developed here and released by tag; kiwi-server
+carries each release as a vendored copy pinned in its `VENDORED` file
+(`tools/vendor.sh` there).
 
 ## License
 
