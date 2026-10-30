@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 — the mesh trusted on a firewalld host
+
+- `ks_firewall_trust_mesh`: with firewalld active and a mesh routed through
+  the stack, `br_netfilter` is loaded, `bridge-nf-call-iptables` set and
+  persisted, and the mesh subnet added to the trusted zone — a mesh client's
+  DNAT'd connection to a service answered through the host, whose conntrack
+  saw only the reply (kiwi-server 2.7.1, problem 57, found with the first
+  device).
+
 ## 0.2.0 — what the first hardware round found
 
 `lib.sh` and the command as kiwi-server 2.7.0 embeds them. Found on
