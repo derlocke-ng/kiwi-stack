@@ -1,7 +1,7 @@
 # kiwi.manifest — see https://github.com/derlocke-ng/kiwi-updater
 NAME=kiwi-stack
 DESCRIPTION=The machine side of a kiwi stack — kiwi-stack applies a bundle rendered by kiwi-modules or kiwi-server (quadlets, host units, firewall, first start, verify) and runs the stack afterwards
-VERSION=0.2.1
+VERSION=0.2.2
 AUTHOR=derlocke-ng
 HOMEPAGE=https://github.com/derlocke-ng/kiwi-stack
 LICENSE=GPL-3.0-or-later

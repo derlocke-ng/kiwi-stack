@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2 — bridged traffic tracked on every podman host with a mesh
+
+- `ks_firewall_trust_mesh` loads `br_netfilter` and sets
+  `bridge-nf-call-iptables` on every podman host that routes a mesh through
+  the stack, not only where firewalld runs: netavark's own forward chain
+  drops the untracked reply of a DNAT'd mesh connection as invalid (seen on a
+  Debian node without any firewall; kiwi-server 2.7.1, problem 57).
+
 ## 0.2.1 — the mesh trusted on a firewalld host
 
 - `ks_firewall_trust_mesh`: with firewalld active and a mesh routed through
