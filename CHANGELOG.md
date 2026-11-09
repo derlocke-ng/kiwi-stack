@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — docker goes when the stack has left it
+
+- On a podman machine an apply switches off a Docker daemon that runs nothing, and warns if it
+  does run something. Docker sets iptables' FORWARD policy to DROP at every start, which kept
+  the machine's published ports from the network after a reboot while every container looked
+  healthy: found on a node that had tried `runtime: docker` and gone back, when another
+  machine's nightly backup could no longer reach it.
+
 ## 0.3.0 — backups have a verb
 
 - `kiwi-stack backup`, `snapshots` and `restore MODULE...` run the script the backup
