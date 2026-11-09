@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.3 — a VPN client waits for the clock at boot
+
+- `kiwi-stack.service` starts after `time-sync.target`, and a stack with a VPN
+  client enables `systemd-time-wait-sync`, bounded at 90 seconds so a machine
+  without NTP still comes up. WireGuard ignores a handshake older than the
+  newest it has seen from that peer: a machine that booted with its clock
+  ahead and opened its tunnel before NTP stepped the clock back was shut out
+  of the mesh, in silence, until real time caught up (kiwi-server problem 60).
+
 ## 0.2.2 — bridged traffic tracked on every podman host with a mesh
 
 - `ks_firewall_trust_mesh` loads `br_netfilter` and sets
