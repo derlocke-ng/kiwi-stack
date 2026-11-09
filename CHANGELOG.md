@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.4 — behind chrony, wait with chrony
+
+- A stack with a VPN client uses `chrony-wait.service` where chronyd runs.
+  `systemd-time-wait-sync` only wakes when the clock is stepped or timesyncd says
+  so, and chrony trims a clock that is already close, so on uCore it sat out its
+  whole 90 seconds at every boot and failed (kiwi-server problem 62). Measured on
+  a mini PC: 94 seconds of userspace boot before, 25 after, and the stack still
+  starts after the clock is good.
+
 ## 0.2.3 — a VPN client waits for the clock at boot
 
 - `kiwi-stack.service` starts after `time-sync.target`, and a stack with a VPN
