@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0 — backups have a verb
+
+- `kiwi-stack backup`, `snapshots` and `restore MODULE...` run the script the backup
+  module of kiwi-modules puts on the machine, and say so on a machine without it.
+
 ## 0.2.4 — behind chrony, wait with chrony
 
 - A stack with a VPN client uses `chrony-wait.service` where chronyd runs.
