@@ -34,6 +34,22 @@ KS_BUNDLE_DIR=/b
 [[ $(ks_bundle_path ca_cert) == /b/kiwi/ca/kiwiCA.crt ]]
 [[ $(ks_bundle_path kiwi-stack) == /usr/local/bin/kiwi-stack ]]
 '
+# a rendered file whose module left goes; a kept one, data and a moved stack stay
+KS_TMP=$tmp bash -c '
+set -euo pipefail
+. ./lib.sh
+ks_say() { :; }
+d=$KS_TMP/stack; mkdir -p "$d/kiwi" "$d/kn-vault"
+touch "$d/kiwi/backup.sh" "$d/kiwi/gw.sh" "$d/kn-vault/data.db" "$d/kn-vault/config.hcl"
+KS_STACK_ENV=$KS_TMP/stack.env
+printf "STACK_DIR=%s\nSTACK_FILES=\"kiwi/backup.sh kiwi/gw.sh kn-vault/config.hcl ../etc/passwd\"\n" "$d" > "$KS_STACK_ENV"
+KS_STACK_FILES=("kiwi/gw.sh:0755")
+ks_stack_drop_files "$KS_TMP/elsewhere"
+[[ -f $d/kiwi/backup.sh ]]
+ks_stack_drop_files "$d"
+[[ ! -e $d/kiwi/backup.sh && ! -e $d/kn-vault/config.hcl ]]
+[[ -f $d/kiwi/gw.sh && -f $d/kn-vault/data.db ]]
+'
 # install into a prefix
 KIWI_PREFIX=$tmp/p bash install.sh install >/dev/null
 test -x "$tmp/p/bin/kiwi-stack" && test -f "$tmp/p/lib/kiwi-stack/lib.sh"
