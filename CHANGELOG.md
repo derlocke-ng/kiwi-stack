@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 — an apply restarts only what changed
+
+- On a running podman stack an apply restarts only the containers whose quadlet changed, or
+  a file they mount or read (`Volume=`, `EnvironmentFile=`), and starts what is new; the rest
+  goes on serving. It restarted every container before (problem 55), and on a master that
+  dropped every VPN client. A container in another's network follows it by its binding. The
+  first apply, a stopped stack and a recreated network still start everything.
+- `kiwi-stack up`: start what is not running, without touching what is or the host units.
+
 ## 0.5.0 — what a module leaves behind goes with it
 
 - An apply removes the files a module rendered once it has left the stack, as it already did
