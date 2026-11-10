@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 — what a module leaves behind goes with it
+
+- An apply removes the files a module rendered once it has left the stack, as it already did
+  with its host units. A backup script left behind still looked like a configured backup to
+  `kiwi-server status`, which would have called it late after a day and a half. The list is
+  kept in stack.env from this release on; what earlier ones left stays.
+
 ## 0.4.0 — docker goes when the stack has left it
 
 - On a podman machine an apply switches off a Docker daemon that runs nothing, and warns if it
