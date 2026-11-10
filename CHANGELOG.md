@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.1 — an apply leaves a data directory's owner alone
+
+- An apply set every existing data directory to the stack user, also one its container owns
+  as another (Tang runs as 999). Every container restarted at every apply then and put its
+  owner back; since 0.6.0 restarts only what changed, Tang could not read its keys after an
+  apply and answered 500. Only a directory owned by root is changed now.
+- An image that cannot be pulled, its registry down, no longer stops an apply when the
+  machine has a copy of it: it warns and goes on.
+
 ## 0.6.0 — an apply restarts only what changed
 
 - On a running podman stack an apply restarts only the containers whose quadlet changed, or
