@@ -50,6 +50,29 @@ ks_stack_drop_files "$d"
 [[ ! -e $d/kiwi/backup.sh && ! -e $d/kn-vault/config.hcl ]]
 [[ -f $d/kiwi/gw.sh && -f $d/kn-vault/data.db ]]
 '
+# a running stack restarts what changed: a quadlet, a mounted file, a file under a mounted dir, an env file
+KS_TMP=$tmp bash -c '
+set -euo pipefail
+. ./lib.sh
+d=$KS_TMP/changed; q=$d/quadlets; mkdir -p "$d/stack/kn-nginx" "$d/stack/kn-vault" "$d/stack/kiwi/env" "$q"
+KS_STACK_DIR=$d/stack KS_QUADLET_DIR=$q
+KS_STACK_SERVICES=(kn-nginx kn-vault kn-pihole kn-portainer)
+KS_STACK_FILES=("kn-nginx/nginx.conf:0644" "kn-vault/config.hcl:0644" "kiwi/env/kn-pihole.env:0600")
+KS_STACK_QUADLETS=(kn-nginx.container kn-vault.container kn-pihole.container kn-portainer.container)
+for f in kn-nginx/nginx.conf kn-vault/config.hcl kiwi/env/kn-pihole.env; do echo old > "$d/stack/$f"; done
+printf "Volume=%s:/etc/nginx/nginx.conf:ro,z\n" "$d/stack/kn-nginx/nginx.conf" > "$q/kn-nginx.container"
+printf "Volume=%s:/data:z\n" "$d/stack/kn-vault" > "$q/kn-vault.container"
+printf "EnvironmentFile=%s\n" "$d/stack/kiwi/env/kn-pihole.env" > "$q/kn-pihole.container"
+printf "Image=portainer\n" > "$q/kn-portainer.container"
+ks_stack_remember
+ks_stack_compare
+[[ -z $(ks_stack_changed_services) ]]                         # nothing written: nothing restarts
+echo new > "$d/stack/kn-vault/config.hcl"                      # under a mounted directory
+echo new > "$d/stack/kiwi/env/kn-pihole.env"                   # an env file
+printf "Image=portainer:2\n" > "$q/kn-portainer.container"     # a quadlet
+ks_stack_compare
+[[ $(ks_stack_changed_services | tr "\n" " ") == "kn-vault kn-pihole kn-portainer " ]]
+'
 # install into a prefix
 KIWI_PREFIX=$tmp/p bash install.sh install >/dev/null
 test -x "$tmp/p/bin/kiwi-stack" && test -f "$tmp/p/lib/kiwi-stack/lib.sh"
