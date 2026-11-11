@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.2 — verify waits for the containers that follow
+
+- `kiwi-stack verify` asks again for a minute before it calls a container down: the containers
+  sharing a restarted container's network follow it a few seconds later, and an apply that
+  restarted the WireGuard server failed its check although everything came up.
+
 ## 0.6.1 — an apply leaves a data directory's owner alone
 
 - An apply set every existing data directory to the stack user, also one its container owns
