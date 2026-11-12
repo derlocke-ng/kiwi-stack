@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 — the LAN's cache first
+
+- `KS_ROLE_REGISTRY_MIRRORS` (registry → mirror) becomes podman's
+  `registries.conf.d/50-kiwi-mirrors.conf`: the mirror first, the registry itself when it does
+  not answer. `KS_ROLE_APT_PROXY` becomes apt's `Proxy-Auto-Detect` script on Debian: the
+  proxy while it answers, else direct. Both go away again when the settings are empty.
+
 ## 0.6.2 — verify waits for the containers that follow
 
 - `kiwi-stack verify` asks again for a minute before it calls a container down: the containers
