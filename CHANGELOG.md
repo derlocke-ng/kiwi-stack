@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1 — minimal Debian and Armbian
+
+- nftables comes with podman: netavark needs `nft`, which a minimal Debian (a cloud image,
+  Armbian minimal) does not have. Found on an arm64 node.
+- Docker CE from Docker's Ubuntu repository on Ubuntu and Ubuntu-based Armbian.
+
 ## 0.7.0 — the LAN's cache first
 
 - `KS_ROLE_REGISTRY_MIRRORS` (registry → mirror) becomes podman's
