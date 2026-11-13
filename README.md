@@ -1,101 +1,82 @@
 # kiwi-stack
 
-The machine side of a kiwi stack: the `kiwi-stack` command and the library
-that puts a rendered bundle onto a CoreOS, uCore or Debian machine and keeps
-it running. The bundle comes from
-[kiwi-modules](https://github.com/derlocke-ng/kiwi-modules) (`kiwi-modules
-render machine.yaml -o DIR`, one machine, no fleet) or from
-[kiwi-server](https://github.com/derlocke-ng/kiwi-server) (`output/<host>/<host>.stack/`);
-a kiwi-server role script carries this same library and installs this same
-command on first boot, so a machine set up either way ends up identical.
+kiwi-stack puts a container stack onto one machine and keeps it running. A
+*stack* is the set of containers and services that a machine runs, and a
+*bundle* is a directory with the stack's rendered configuration. kiwi-stack
+takes a bundle that kiwi-modules or kiwi-server rendered and applies it to a
+Fedora CoreOS, uCore or Debian machine. It installs the container runtime on
+Debian, writes the files, installs the systemd units, opens the firewall
+ports, starts the containers and checks that each one is running. Afterwards the
+`kiwi-stack` command starts, stops, updates and inspects the stack.
 
-```sh
+kiwi-stack is the part of the Kiwi network that runs on each machine.
+kiwi-server's role scripts carry the same library and install the same
+command, so a machine ends up the same whether kiwi-server set it up or you
+applied a bundle with kiwi-stack. Use kiwi-stack on its own when you want a
+stack on one machine without a fleet.
+
+- Latest release: **v0.7.1**
+- Runs on: Fedora CoreOS, uCore, Debian and Debian-based systems such as
+  Ubuntu and Armbian, as root. CI checks the scripts, not an apply on a
+  machine ([supported systems](docs/install.md#supported-systems)).
+- License: GPL-3.0-or-later
+
+## Install
+
+On the machine:
+
+```bash
 git clone https://github.com/derlocke-ng/kiwi-stack && cd kiwi-stack
-sudo ./install.sh install          # /usr/local/bin/kiwi-stack, /usr/local/lib/kiwi-stack/lib.sh
-sudo kiwi-stack apply /tmp/sh3.bundle
-kiwi-stack status
+sudo ./install.sh install
 ```
 
-Needs bash, systemd, and podman 4.4+ with catatonit (quadlets) or docker
-with the compose plugin, whichever the bundle's `runtime` is. Runs as root.
+The installer copies the command to `/usr/local/bin/kiwi-stack` and its
+library to `/usr/local/lib/kiwi-stack/lib.sh`. Nothing else on the machine
+changes until you apply a bundle. kiwi-stack needs bash and systemd, and the
+container runtime that the bundle names: podman 4.4 or newer, or docker with
+the compose plugin. On Debian, the apply installs the runtime itself.
 
-## What apply does
+## Quick start
 
-`kiwi-stack apply DIR` sources `DIR/stack.sh` and, logged to
-`/var/log/kiwi-server-role.log` with an error trap that leaves
-`/var/lib/kiwi-server/role.failed` (step, command, last log lines) when a
-step fails:
+Render a bundle on your workstation with
+[kiwi-modules](https://kiwi-network.eu/docs/server/modules/), copy it to the
+machine, and apply it there:
 
-1. trusts the network's CA when the bundle carries one (`kiwi/ca/kiwiCA.crt`);
-2. creates the service user, installs or enables podman or docker, loads
-   kernel modules, applies sysctls, turns systemd-resolved's stub listener
-   off when the stack runs a resolver and points resolved at it;
-3. refuses a bundle from another seed than the one applied before
-   (`KS_SEED_ID` against `STACK_SEED_ID` in `/etc/kiwi-server/stack.env`):
-   the databases know the old passwords;
-4. stops the old stack when the runtime or the directory changes, unpacks
-   the bundle into the stack directory (data owned by the service user,
-   rendered files root's, secrets 0600), installs the host units and the
-   quadlets (`/etc/containers/systemd`, marked `# kiwi-server stack`, 0600),
-   removes units a previous apply put there and the bundle no longer has;
-5. installs itself (`/usr/local/bin/kiwi-stack`, the library) and writes
-   `/etc/kiwi-server/stack.env`;
-6. opens the ports in firewalld or ufw;
-7. pulls every image with retries, enables and restarts `kiwi-stack.service`
-   (the stack's target or `compose up`), the host units, the daily VPN
-   restart and weekly update timers the stack asks for, then
-   `kiwi-stack verify`: every container must be running, or the apply fails
-   with their names.
-
-An apply is repeatable: the same bundle again changes nothing, a new render
-replaces what changed.
-
-## The command
-
-```
-kiwi-stack start|stop|restart        the whole stack (kiwi-stack.service), then the host units
-kiwi-stack status                    units or compose ps, the mesh route
-kiwi-stack verify                    exit 1 with the names of containers that are not running
-kiwi-stack logs [service]            journal or compose logs
-kiwi-stack update                    pull newer images and restart (honours STACK_AUTO_UPDATE)
-kiwi-stack vpn-restart               restart the VPN client and what depends on it (the daily timer runs this)
-kiwi-stack apply DIR                 a bundle, as above
+```bash
+kiwi-modules render sh3/sh3.yaml -o sh3/sh3.bundle
+scp -r sh3/sh3.bundle sh3:/tmp/
+ssh sh3 sudo kiwi-stack apply /tmp/sh3.bundle
+ssh sh3 sudo kiwi-stack status
 ```
 
-## The contracts
+The apply ends by checking that every container is running. If one is not,
+the apply fails and names it. You can apply a bundle again at any time. On a
+running podman stack, an apply restarts only the containers whose
+configuration changed. How to write the machine file and render it is
+described on the kiwi-modules page.
 
-These are read by both repositories and by every machine already applied;
-a change is a compatibility break and goes through kiwi-server's golden test.
+## Documentation
 
-**The bundle** (`stack.sh` sourced by bash, `KS_*` only): `KS_HOST`,
-`KS_HOSTNAME`, `KS_DOMAIN`, `KS_TARGET`, `KS_ROLE`, `KS_ADMIN_USER`,
-`KS_TIMEZONE`, `KS_ROLE_PRESET`, `KS_ROLE_DOCKER_SOURCE`,
-`KS_ROLE_DAILY_VPN_RESTART`, `KS_ROLE_WEEKLY_UPDATE`, `KS_STACK=1` and the
-`KS_STACK_*` list: `DIR`, `USER`, `PREFIX`, `MODULES`, `DIRS`, `PORTS`,
-`UNITS`, `SYSCTL`, `KMODS`, `FILES` (`path:mode`), `SERVICES`, `URLS`,
-`VPN_CONTAINER`, `VPN_DEPENDENTS`, `MESH_SUBNET`, `MESH_VIA`, `HOSTS`,
-`RUNTIME`, `QUADLETS`, `NO_RESOLVED_STUB`, `IMAGES`, `DNS_IP`,
-`AUTO_UPDATE`, plus `KS_SEED_ID`. Files: the paths in `KS_STACK_FILES`
-relative to the bundle, `host-units/<unit>`, `quadlets/<unit>`,
-`kiwi/ca/kiwiCA.crt`.
+| Page | What it covers |
+|---|---|
+| [Install](docs/install.md) | supported systems, requirements, install, update and uninstall |
+| [Apply a bundle](docs/apply.md) | what an apply does step by step, applying again, failures |
+| [The kiwi-stack command](docs/commands.md) | every command for running the stack afterwards |
+| [Bundle and machine contracts](docs/contracts.md) | the variables, files and units that kiwi-stack reads and writes |
+| [Development](docs/development.md) | tests, CI, releases, the copy in kiwi-server |
 
-**On the machine:** `/etc/kiwi-server/stack.env` with `STACK_DIR`,
-`STACK_USER`, `STACK_RUNTIME`, `STACK_SERVICES`, `STACK_PREFIX`,
-`STACK_VPN_CONTAINER`, `STACK_VPN_DEPENDENTS`, `STACK_MESH_SUBNET`,
-`STACK_MESH_VIA`, `STACK_UNITS`, `STACK_MODULES`, `STACK_SEED_ID`,
-`STACK_AUTO_UPDATE`; the unit `kiwi-stack.service`; quadlets and
-`/etc/sysctl.d/90-kiwi-stack.conf` begin with `# kiwi-server stack`;
-`/var/lib/kiwi-server/{role.done,role.failed,stack.applied}`;
-`/var/log/kiwi-server-role.log`.
+The same pages are on
+[kiwi-network.eu](https://kiwi-network.eu/docs/server/single/), under "One
+machine, without a fleet".
 
 ## Status
 
-0.2.0: `lib.sh` and the command as kiwi-server 2.7.0 embeds them, with the
-fixes of the first hardware round (CHANGELOG.md); they have applied a master
-and two nodes. They are developed here and released by tag; kiwi-server
-carries each release as a vendored copy pinned in its `VENDORED` file
-(`tools/vendor.sh` there).
+kiwi-stack has applied stacks to real machines. [CHANGELOG.md](CHANGELOG.md)
+records what each round on hardware found, on masters and on nodes running
+uCore, Debian and Armbian (arm64). Known gaps: there is no rollback, there is
+no command that removes a stack, and an apply never closes a firewall port
+that an earlier apply opened.
 
 ## License
 
-GPL-3.0-or-later.
+GPL-3.0-or-later; see [LICENSE](LICENSE).
