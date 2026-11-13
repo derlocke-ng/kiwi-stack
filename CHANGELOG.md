@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.1 — a docs/ folder, and a short README
+
+- `docs/`: install and supported systems, every command, what an apply does, the files and
+  variables, development. kiwi-network.eu shows these pages from the next release on.
+- The README is the short front page now; it had not named `backup`, `snapshots` and
+  `restore`.
+
 ## 0.8.0 — a replaced seed is taken when the bundle says so
 
 - A bundle from another seed than the running stack's is still refused, unless it names the
