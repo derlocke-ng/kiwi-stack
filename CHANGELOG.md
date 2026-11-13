@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.2 — a setup right after a Debian install waits for apt
+
+- A fresh Debian fetches its own package lists after its first boot and holds their lock.
+  An apply started in that minute stopped at `apt-get update`. It waits for the lock now.
+
 ## 0.8.1 — a docs/ folder, and a short README
 
 - `docs/`: install and supported systems, every command, what an apply does, the files and
