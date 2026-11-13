@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0 — a replaced seed is taken when the bundle says so
+
+- A bundle from another seed than the running stack's is still refused, unless it names the
+  running one as the seed it replaced (`KS_SEED_FROM`, kiwi-modules 0.30.1): kiwi-server's
+  `rotate seed` replaces the secrets that containers read at every start, and those
+  containers restart.
+
 ## 0.7.1 — minimal Debian and Armbian
 
 - nftables comes with podman: netavark needs `nft`, which a minimal Debian (a cloud image,
