@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2 — packages on an Armbian board behind the LAN's cache
+
+- Only Debian's own sources go through the LAN's package cache. Every other source
+  (Armbian's own, a vendor's) goes direct: the cache keeps Debian only and answered 403,
+  so `apt-get update` failed and nothing could be installed on a board.
+
 ## 0.9.1 — what an Odroid met as the home's gateway
 
 - `kiwi-stack address` said "not run by systemd-networkd" on a machine that is: the
