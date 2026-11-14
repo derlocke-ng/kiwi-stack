@@ -443,7 +443,11 @@ ks_local_cache() {
         at=${KS_ROLE_APT_PROXY#http://}; at=${at%%/*}
         {
             echo '#!/bin/sh'
-            echo "# kiwi-server: apt asks this for every http source. The LAN's package cache while it answers, else direct."
+            echo "# kiwi-server: apt asks this for every http source, with its address. Debian's own sources go"
+            echo "# through the LAN's package cache while it answers. Any other (Armbian's, a vendor's) goes direct:"
+            echo "# the cache keeps Debian only and refuses the rest, which stopped every install on an Armbian board."
+            # shellcheck disable=SC2016
+            printf '%s\n' 'case "$1" in' '    http://deb.debian.org/*|http://security.debian.org/*) ;;' '    *) echo DIRECT; exit 0 ;;' 'esac'
             printf 'if timeout 2 bash -c "</dev/tcp/%s/%s" 2>/dev/null; then echo "%s"; else echo DIRECT; fi\n' \
                 "${at%:*}" "${at##*:}" "$KS_ROLE_APT_PROXY"
         } | ks_write "$detect" 0755
