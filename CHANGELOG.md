@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.5 — a machine with its own Pi-hole has somebody to ask at boot
+
+- The machine asks its own Pi-hole only while the stack runs (`/run/systemd/resolved.conf.d`,
+  set by `kiwi-stack up`, taken away by `stop`). Set for good, it had nobody to ask at
+  boot until the stack was up: the time service could not find its servers by name, and
+  the stack, which waits for the clock, started 90 seconds late.
+- The wait for the clock ends after 90 seconds without counting as a failed unit.
+  `chrony-wait.service` ran into systemd's timeout at every boot of such a machine, and
+  `status` showed "failed units: chrony-wait.service" on a machine that had no problem.
+
 ## 0.9.4 — systemd-networkd leaves the stack's routes and rules alone
 
 - Where systemd-networkd runs the network (Armbian), it removed routes and routing rules
