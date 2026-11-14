@@ -9,6 +9,10 @@
   when it does not work, what the machine had before is back within a minute.
   `kiwi-stack address` alone says what the machine has. kiwi-server runs it after an
   apply.
+- The dns module added to a machine whose stack already runs (podman): Pi-hole did not
+  start, "address already in use", because podman's own resolver kept port 53 until
+  its network was empty. The stack now stops once and starts from the beginning when
+  the resolver's port is moved.
 
 ## 0.8.3 — system updates work behind the LAN's image cache
 
