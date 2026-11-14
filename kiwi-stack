@@ -126,7 +126,8 @@ own_dns() { # on|off
     # unit to show for it; Pi-hole's own first fetch of its blocklist failed the same way.
     [[ -n ${STACK_DNS_IP:-} ]] || return 0
     systemctl is-active -q systemd-resolved 2>/dev/null || return 0
-    local f=/run/systemd/resolved.conf.d/90-kiwi-stack.conf want
+    # (a name of its own: a file in /etc of the same name would hide this one)
+    local f=/run/systemd/resolved.conf.d/91-kiwi-stack-dns.conf want
     if [[ $1 == on ]]; then
         want=$(printf '%s\n' '[Resolve]' "DNS=$STACK_DNS_IP 9.9.9.9 149.112.112.112" 'Domains=~.')
         [[ -f $f && $(cat "$f") == "$want" ]] && return 0

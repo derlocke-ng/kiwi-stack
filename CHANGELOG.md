@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.6 — the file in /run has a name of its own
+
+- 0.9.5 wrote the running stack's DNS setting to `/run/systemd/resolved.conf.d/` under
+  the name of the file in `/etc`, which hides it: the machine did not ask its Pi-hole at
+  all. It is `91-kiwi-stack-dns.conf` now.
+
 ## 0.9.5 — a machine with its own Pi-hole has somebody to ask at boot
 
 - The machine asks its own Pi-hole only while the stack runs (`/run/systemd/resolved.conf.d`,
