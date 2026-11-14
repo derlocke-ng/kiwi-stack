@@ -438,6 +438,12 @@ ks_local_cache() {
     else
         rm -f "$conf" "$sigs"
     fi
+    ks_apt_proxy
+}
+
+ks_apt_proxy() {
+    # Also before the first apt of a run (ks_base): a script from an older release sent every
+    # source to the cache, and the run that would have replaced it stopped at its own apt.
     local aptconf=/etc/apt/apt.conf.d/30kiwi-proxy detect=/usr/local/bin/kiwi-apt-proxy at
     if ks_is_debian && [[ ${KS_ROLE_APT_PROXY:-} == http://*:* ]]; then
         at=${KS_ROLE_APT_PROXY#http://}; at=${at%%/*}
@@ -452,7 +458,7 @@ ks_local_cache() {
                 "${at%:*}" "${at##*:}" "$KS_ROLE_APT_PROXY"
         } | ks_write "$detect" 0755
         printf 'Acquire::http::Proxy-Auto-Detect "%s";\n' "$detect" | ks_write "$aptconf" 0644
-        ks_say "packages come through the LAN's cache first ($KS_ROLE_APT_PROXY)"
+        [[ ${1:-} == quiet ]] || ks_say "packages come through the LAN's cache first ($KS_ROLE_APT_PROXY)"
     else
         rm -f "$aptconf" "$detect"
     fi
@@ -922,6 +928,7 @@ ks_base() {
         hostnamectl set-hostname "$KS_HOSTNAME" 2>/dev/null || echo "$KS_HOSTNAME" > /etc/hostname
     fi
     timedatectl set-timezone "$KS_TIMEZONE" 2>/dev/null || true
+    ks_apt_proxy quiet
     ks_apt_update
     ks_trust_ca
 }
