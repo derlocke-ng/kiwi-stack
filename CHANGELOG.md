@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.4 — systemd-networkd leaves the stack's routes and rules alone
+
+- Where systemd-networkd runs the network (Armbian), it removed routes and routing rules
+  it had not made whenever it set a card up anew. The stack's route to the mesh and the
+  gateway's rule for LAN clients vanished with a new address or a link that came back,
+  until the stack was restarted. `ManageForeignRoutes=no` and
+  `ManageForeignRoutingPolicyRules=no` are set once.
+
 ## 0.9.3 — the cache script is put right before the first apt
 
 - The script that sends apt to the LAN's cache is written before the first `apt-get` of

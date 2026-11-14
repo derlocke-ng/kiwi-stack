@@ -358,6 +358,21 @@ ks_stack_host_prep() {
         printf '%s\n' '# kiwi-server stack: podman'"'"'s own DNS off port 53, so the dns module may publish it' \
             '[network]' 'dns_bind_port = 5533' > /etc/containers/containers.conf.d/50-kiwi-dns.conf
     fi
+    # systemd-networkd (Armbian, some Debian) removes routes and routing rules it did not
+    # make whenever it sets a card up anew: the stack's route to the mesh and the gateway's
+    # rule for LAN clients went with a new address or a link that came back, and stayed
+    # away until the stack was restarted. They are the stack's: networkd leaves them be.
+    if systemctl is-active -q systemd-networkd 2>/dev/null; then
+        install -d -m 0755 /etc/systemd/networkd.conf.d
+        if ! grep -qs 'ManageForeignRoutes=no' /etc/systemd/networkd.conf.d/50-kiwi-stack.conf; then
+            printf '%s\n' '# kiwi-server stack: the routes and rules of the stack are not networkd'"'"'s to remove' \
+                '[Network]' 'ManageForeignRoutingPolicyRules=no' 'ManageForeignRoutes=no' > /etc/systemd/networkd.conf.d/50-kiwi-stack.conf
+            # read at its start only (a reload reads the cards' files, not this one). A restart
+            # keeps the addresses of running cards, so an apply from elsewhere survives it
+            systemctl restart systemd-networkd 2>/dev/null || true
+            ks_say "systemd-networkd leaves the stack's routes and rules alone from now on"
+        fi
+    fi
     # Pi-hole wants port 53 on the host; systemd-resolved's stub listener (Fedora
     # CoreOS, uCore) sits on 127.0.0.53:53 and would block it. Debian's default
     # install has no systemd-resolved, so nothing happens there.
