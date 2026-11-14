@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.3 — system updates work behind the LAN's image cache
+
+- A uCore machine that fetches its images through the LAN's cache never got a system
+  update: the update checks the image's signature where it fetches it, the cache counted
+  as a place without signatures ("A signature was required, but no signature exists"),
+  and `rpm-ostreed-automatic.service` stayed failed. The cache is now named as a place
+  that carries signatures (`/etc/containers/registries.d/50-kiwi-mirrors.yaml`).
+
 ## 0.8.2 — a setup right after a Debian install waits for apt
 
 - A fresh Debian fetches its own package lists after its first boot and holds their lock.
