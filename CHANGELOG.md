@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0 — a board gets its fixed address
+
+- `kiwi-stack address ADDRESS/PREFIX GATEWAY [DNS...]`: this machine's fixed address at
+  home, where systemd-networkd runs the network (Armbian). A board starts from an image
+  and asks the router; until now the address in the fleet file never reached it. The
+  new address is checked (the card has it, the router is there, nobody else uses it);
+  when it does not work, what the machine had before is back within a minute.
+  `kiwi-stack address` alone says what the machine has. kiwi-server runs it after an
+  apply.
+
 ## 0.8.3 — system updates work behind the LAN's image cache
 
 - A uCore machine that fetches its images through the LAN's cache never got a system
