@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.3 — the cache script is put right before the first apt
+
+- The script that sends apt to the LAN's cache is written before the first `apt-get` of
+  a run, not after it: a machine with the older script could not get past its own apt
+  to receive the new one.
+
 ## 0.9.2 — packages on an Armbian board behind the LAN's cache
 
 - Only Debian's own sources go through the LAN's package cache. Every other source
