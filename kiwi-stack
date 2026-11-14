@@ -32,7 +32,8 @@ if [[ ${1:-} == address ]]; then
     file=/etc/systemd/network/05-kiwi-lan.network      # sorts before netplan's files in /run: it wins for its card
     ifc=$(ip -o -4 route show default | awk '{print $5; exit}')
     [[ -n $ifc ]] || { echo "kiwi-stack: this machine has no default route, so no card to give the address to" >&2; exit 3; }
-    if ! systemctl is-active --quiet systemd-networkd || ! networkctl status "$ifc" 2>/dev/null | grep -q 'State:.*configured'; then
+    state=$(networkctl status "$ifc" 2>/dev/null || true)      # not piped into grep -q: pipefail would count its early exit
+    if ! systemctl is-active --quiet systemd-networkd || [[ $state != *"(configured)"* ]]; then
         echo "kiwi-stack: the network here is not run by systemd-networkd: this machine's address is set where it was installed" >&2
         exit 3
     fi
@@ -102,6 +103,22 @@ mesh_route() {
     [[ -n ${STACK_MESH_VIA:-} && -n ${STACK_MESH_SUBNET:-} ]] || return 0
     ip route replace "$STACK_MESH_SUBNET" via "$STACK_MESH_VIA" 2>/dev/null || true
 }
+misrouted() {
+    # A container the machine cannot reach on its own stack network: a route for its address
+    # points elsewhere. Seen with a router whose DHCP hands out a route for one address
+    # (172.128.0.4 via another gateway) to a machine that has a container at that address:
+    # the container runs and has no network. Said, not failed: the stack itself is up.
+    [[ $STACK_RUNTIME == podman ]] || return 0
+    local s ip dev
+    for s in $STACK_SERVICES; do
+        ip=$(podman inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$s" 2>/dev/null | awk '{print $1}')
+        [[ -n $ip ]] || continue
+        dev=$(ip -o route get "$ip" 2>/dev/null | sed -n 's/.* dev \([^ ]*\).*/\1/p')
+        if [[ -n $dev && $dev != podman* && $dev != knet* && $dev != br-* && $dev != lo ]]; then
+            echo "warning: $s ($ip) is not reached on the stack's network: this machine routes $ip through $dev, so the container has no network. A route from the router's DHCP does that; a fixed address for this machine ends it" >&2
+        fi
+    done
+}
 verify() {
     # every service of the stack is running, or the names of those that are not;
     # a unit still (re)starting counts as down — a pull that cannot finish must not pass.
@@ -128,6 +145,7 @@ verify() {
         return 1
     fi
     echo "all ${STACK_SERVICES// /, } running"
+    misrouted
 }
 vpn_restart() {
     [[ -n ${STACK_VPN_CONTAINER:-} ]] || return 0
