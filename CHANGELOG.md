@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.1 — what an Odroid met as the home's gateway
+
+- `kiwi-stack address` said "not run by systemd-networkd" on a machine that is: the
+  check piped into `grep -q`, and `pipefail` counted its early exit.
+- Debian and Armbian with podman: `iptables` is installed when it is missing. The
+  gateway's routing script needs it, and Armbian's image has nft only.
+- `kiwi-stack verify` names a container whose address the machine routes somewhere else
+  than to the stack's own network: a router that hands out a route for that address
+  (seen: 172.128.0.4 via another gateway) leaves the container without a network, and
+  nothing said why. A fixed address for the machine ends it.
+
 ## 0.9.0 — a board gets its fixed address
 
 - `kiwi-stack address ADDRESS/PREFIX GATEWAY [DNS...]`: this machine's fixed address at

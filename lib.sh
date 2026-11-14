@@ -190,6 +190,11 @@ ks_ensure_podman() {
     if [[ $KS_OS == debian ]] && ! command -v nft >/dev/null 2>&1; then
         ks_apt nftables
     fi
+    # the modules' host scripts (the gateway's routing, the VPN client's rules) speak iptables;
+    # Armbian's image has nft only, and the gateway then routed nothing ("iptables: command not found")
+    if [[ $KS_OS == debian ]] && ! command -v iptables >/dev/null 2>&1; then
+        ks_apt iptables
+    fi
     local pv
     pv=$(podman --version 2>/dev/null | awk '{print $NF}')
     if [[ -n $pv ]] && [[ $(printf '%s\n4.4\n' "$pv" | sort -V | head -1) != 4.4 ]]; then
