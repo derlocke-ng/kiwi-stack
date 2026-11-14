@@ -16,6 +16,8 @@ Every command runs on the machine, as root.
 | `kiwi-stack backup` | Saves the machine's data now. |
 | `kiwi-stack snapshots` | Lists the saved states. |
 | `kiwi-stack restore` | Brings data back from a saved state. |
+| `kiwi-stack address` | Says which address the machine has at home and whether it is fixed. |
+| `kiwi-stack address ADDRESS/PREFIX GATEWAY [DNS...]` | Gives the machine a fixed address, where systemd-networkd runs the network (Armbian). When the new address does not work, what it had before comes back within a minute. |
 
 A *host unit* is a systemd unit that a module needs on the host itself and
 not in a container, for example the routing of a gateway.

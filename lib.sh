@@ -343,6 +343,13 @@ ks_stack_host_prep() {
         # with "address already in use". containers.conf moves aardvark to another port;
         # podman redirects the containers' lookups there itself. Read at network start.
         install -d -m 0755 /etc/containers/containers.conf.d
+        # New on a machine whose stack runs (the dns module was added later): podman's
+        # resolver holds port 53 until its network has no container left, so the whole
+        # stack stops once and starts again; restarting only what changed left Pi-hole
+        # with "address already in use" (an Odroid that became the home's ad blocker).
+        if [[ ! -f /etc/containers/containers.conf.d/50-kiwi-dns.conf ]] || ss -Hlunp 2>/dev/null | grep ':53 ' | grep -q aardvark-dns; then
+            KS_STACK_FROM_THE_START=1
+        fi
         printf '%s\n' '# kiwi-server stack: podman'"'"'s own DNS off port 53, so the dns module may publish it' \
             '[network]' 'dns_bind_port = 5533' > /etc/containers/containers.conf.d/50-kiwi-dns.conf
     fi
@@ -836,7 +843,7 @@ ks_stack_apply() {
     ks_say "starting the stack (${KS_STACK_MODULES[*]})"
     ks_stack_units
     systemctl enable -q kiwi-stack.service
-    if [[ $KS_STACK_RUNTIME == podman ]] && systemctl -q is-active kiwi-stack.service; then
+    if [[ $KS_STACK_RUNTIME == podman ]] && systemctl -q is-active kiwi-stack.service && (( ! ${KS_STACK_FROM_THE_START:-0} )); then
         # a running stack: what is new starts, what changed restarts (a bind mount keeps the old
         # inode, so a changed file needs it), and the rest goes on serving (problem 55). What
         # lives in another's network follows it by BindsTo.
