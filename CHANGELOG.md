@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.8 — a removed service leaves no failed unit behind
+
+- A service that no module runs any more is stopped and removed, as before; its failed
+  state is cleared too. A service that ended with an error on its way out (seen with a
+  Jabber server moved to another machine) stayed listed under the machine's failed units
+  though nothing was wrong.
+
 ## 0.9.7 — what an apply wrote survives a power cut
 
 - After the stack is written and started, and at the end of the role, the machine's
