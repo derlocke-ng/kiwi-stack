@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.7 — what an apply wrote survives a power cut
+
+- After the stack is written and started, and at the end of the role, the machine's
+  files are forced to the disk. Before, a power cut in the minute after an apply could
+  bring the stack's files back empty (seen with kiwi-server's control node, whose files
+  were written the same way).
+
 ## 0.9.6 — the file in /run has a name of its own
 
 - 0.9.5 wrote the running stack's DNS setting to `/run/systemd/resolved.conf.d/` under
