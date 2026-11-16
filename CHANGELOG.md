@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.9 — a power cut during an apply leaves whole files
+
+- Each file an apply replaces is on the disk before it takes the old one's place, and the
+  rename is too. A power cut in the middle of an apply leaves the old file or the new one,
+  never an empty one (XFS, the root of Fedora CoreOS, keeps nothing back for a rename).
+  0.9.7 had made sure of it at the end of an apply only.
+
 ## 0.9.8 — a removed service leaves no failed unit behind
 
 - A service that no module runs any more is stopped and removed, as before; its failed

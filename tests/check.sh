@@ -34,6 +34,15 @@ KS_BUNDLE_DIR=/b
 [[ $(ks_bundle_path ca_cert) == /b/kiwi/ca/kiwiCA.crt ]]
 [[ $(ks_bundle_path kiwi-stack) == /usr/local/bin/kiwi-stack ]]
 '
+# a replaced file is whole: the new content, its mode, nothing left behind
+KS_TMP=$tmp bash -c '
+set -euo pipefail
+. ./lib.sh
+d=$KS_TMP/rep; mkdir -p "$d"; echo old > "$d/f"
+echo new | ks_write "$d/f" 0640 "$(id -u):$(id -g)"
+[[ $(cat "$d/f") == new && $(stat -c %a "$d/f") == 640 && ! -e $d/f.tmp ]]
+printf x > "$d/t"; ks_replace "$d/t" "$d/f"; [[ $(cat "$d/f") == x && ! -e $d/t ]]
+'
 # a rendered file whose module left goes; a kept one, data and a moved stack stay
 KS_TMP=$tmp bash -c '
 set -euo pipefail
