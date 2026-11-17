@@ -33,7 +33,7 @@ runs this command.
 
 `backup`, `snapshots` and `restore` exist on a machine that has the `backup`
 module. On any other machine they say so and stop. kiwi-server's page
-[Backups](https://kiwi-network.eu/docs/server/kiwi-server/backups/) describes
+[Backups](https://kiwi-network.eu/docs/server/operations/#backing-up-the-machines-data) describes
 how backups are set up and restored.
 
 ## A first run by hand
