@@ -83,6 +83,8 @@ ks_stack_compare
 [[ $(ks_stack_changed_services | tr "\n" " ") == "kn-vault kn-pihole kn-portainer " ]]
 # a run that ends before its restarts (an image did not pull): the next one still restarts them
 KS_PENDING=$d/restart-pending
+trap '\''echo "ERR trap: $BASH_COMMAND" >&2; exit 9'\'' ERR; set -E      # as the role script runs it
+[[ -z $(ks_stack_restart_due) ]] || true                       # no file, nothing changed: quiet
 ks_stack_note_pending
 ks_stack_remember; ks_stack_compare                             # the next run: the files are the same now
 [[ -z $(ks_stack_changed_services) ]]

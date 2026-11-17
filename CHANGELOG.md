@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.11 — the owed restarts say nothing when none are owed
+
+- 0.9.10's look for owed restarts read a file that is usually not there; under the role
+  script's error trap that printed "the role stopped" although the apply went on, and the list
+  of restarts could come out empty. It checks for the file first now; the checks run it under
+  the same trap.
+
 ## 0.9.10 — a restart an apply owes is not forgotten
 
 - What an apply changed and has not restarted yet is written down
