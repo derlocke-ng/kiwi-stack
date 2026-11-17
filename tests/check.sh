@@ -94,13 +94,18 @@ ks_stack_remember; ks_stack_compare                             # the next run: 
 bash -c '
 set -euo pipefail
 eval "$(sed -n "/^verify() {/,/^}/p" kiwi-stack)"
-misrouted() { :; }
+eval "$(sed -n "/^misrouted() {/,/^}/p" kiwi-stack)"
+podman() { return 125; }            # a container asleep does not exist: inspect fails
+ip() { :; }
 systemctl() { [[ $2 == kn-up.service ]] && echo active || echo inactive; }
 STACK_RUNTIME=podman STACK_SERVICES="kn-up kn-game-a" KS_VERIFY_TRIES=0 KS_SLEEPING='"$tmp"'/sleeping
 mkdir -p "$KS_SLEEPING"
 if verify 2>/dev/null; then echo "a stopped service without the mark must fail"; exit 1; fi
 touch "$KS_SLEEPING/kn-game-a"
 [[ $(verify) == "all kn-up, kn-game-a running, asleep until someone comes: kn-game-a" ]]
+# as `kiwi-stack verify` runs it: set -e alive (inside `x || y` bash switches it off, and the bug hid)
+set +e; (set -e; verify >/dev/null); rc=$?; set -e
+(( rc == 0 )) || { echo "verify failed ($rc) with a container asleep (its inspect fails)"; exit 1; }
 '
 # install into a prefix
 KIWI_PREFIX=$tmp/p bash install.sh install >/dev/null
