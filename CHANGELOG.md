@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.13 — verify with a game server asleep
+
+- 0.9.12's `verify` said every container ran, then failed: its last look (is a container
+  reached on the stack's network) asked podman about the sleeping server, whose container does
+  not exist while it sleeps, and under `set -e` that ended it. An apply then called the stack
+  not up (medlar, 18 Nov 2026). A container asleep is left out of that look now; the test calls
+  `verify` the way `kiwi-stack verify` runs it.
+
 ## 0.9.12 — asleep is not down
 
 - `verify` and `status` count a service with a file in `/run/kiwi-stack/sleeping/` as asleep,
