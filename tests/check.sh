@@ -90,6 +90,18 @@ ks_stack_remember; ks_stack_compare                             # the next run: 
 [[ -z $(ks_stack_changed_services) ]]
 [[ $(ks_stack_restart_due | tr "\n" " ") == "kn-pihole kn-portainer kn-vault " ]]
 '
+# a service asleep (a game server nobody plays on) is not down; a stopped one without the mark is
+bash -c '
+set -euo pipefail
+eval "$(sed -n "/^verify() {/,/^}/p" kiwi-stack)"
+misrouted() { :; }
+systemctl() { [[ $2 == kn-up.service ]] && echo active || echo inactive; }
+STACK_RUNTIME=podman STACK_SERVICES="kn-up kn-game-a" KS_VERIFY_TRIES=0 KS_SLEEPING='"$tmp"'/sleeping
+mkdir -p "$KS_SLEEPING"
+if verify 2>/dev/null; then echo "a stopped service without the mark must fail"; exit 1; fi
+touch "$KS_SLEEPING/kn-game-a"
+[[ $(verify) == "all kn-up, kn-game-a running, asleep until someone comes: kn-game-a" ]]
+'
 # install into a prefix
 KIWI_PREFIX=$tmp/p bash install.sh install >/dev/null
 test -x "$tmp/p/bin/kiwi-stack" && test -f "$tmp/p/lib/kiwi-stack/lib.sh"

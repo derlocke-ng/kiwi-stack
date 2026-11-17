@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.12 — asleep is not down
+
+- `verify` and `status` count a service with a file in `/run/kiwi-stack/sleeping/` as asleep,
+  not as down: a game server that the games module stopped while nobody plays on it, and
+  starts again for the first player. One stopped without that file is still down.
+
 ## 0.9.11 — the owed restarts say nothing when none are owed
 
 - 0.9.10's look for owed restarts read a file that is usually not there; under the role
