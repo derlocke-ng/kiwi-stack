@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.10 — a restart an apply owes is not forgotten
+
+- What an apply changed and has not restarted yet is written down
+  (`/etc/kiwi-server/restart-pending`) before the images are pulled, and only cleared once it
+  restarted. An apply that ended at a pull (a master in memory out of room, 17 Nov 2026) had
+  written its files; the next run found them the same, restarted nothing, and the old VPN
+  server went on with the old settings.
+
 ## 0.9.9 — a power cut during an apply leaves whole files
 
 - Each file an apply replaces is on the disk before it takes the old one's place, and the
