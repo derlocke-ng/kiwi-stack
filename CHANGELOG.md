@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.17 — the groups of the home network
+
+- `kiwi-stack apply` keeps what each group of the home network may open on this machine
+  (`KS_STACK_LAN_RULES`, kiwi-modules 0.96.0, kiwi-server docs/design/lans.md) in the nftables
+  table `kiwi_lan`: per group all, nothing, or some ports; only what is addressed to this
+  machine is looked at, before a published port's DNAT; DNS, DHCP and ping stay open, and
+  answers to what the machine started come back. The rules are checked (`nft -c`) before they
+  replace the old ones in one transaction, and `kiwi-lan.service` loads them at boot. Without
+  groups the table is gone.
+
 ## 0.9.16 — an update with little room
 
 - `kiwi-stack update` on a nearly full disk (75 % or more where the images are) takes one image at

@@ -112,4 +112,18 @@ KIWI_PREFIX=$tmp/p bash install.sh install >/dev/null
 test -x "$tmp/p/bin/kiwi-stack" && test -f "$tmp/p/lib/kiwi-stack/lib.sh"
 KIWI_PREFIX=$tmp/p bash install.sh uninstall >/dev/null
 test ! -e "$tmp/p/bin/kiwi-stack"
+# the groups of the home network: one rule set, only what is for this machine, a bad entry left out
+bash -c '
+set -euo pipefail
+. ./lib.sh
+KS_STACK_LAN_RULES=("192.168.20.0/24 tcp:443,tcp:80" "192.168.30.0/24 none" "192.168.40.0/24 all" "bad x")
+out=$(ks_lan_nft 2>/dev/null)
+grep -q "^delete table inet kiwi_lan$" <<<"$out"
+grep -q "fib daddr type != local accept" <<<"$out"
+grep -q "ip saddr 192.168.20.0/24 tcp dport 443 accept" <<<"$out"
+grep -q "ip saddr 192.168.20.0/24 drop" <<<"$out"
+grep -q "ip saddr 192.168.30.0/24 drop" <<<"$out"
+grep -q "ip saddr 192.168.40.0/24 accept" <<<"$out"
+! grep -q "bad" <<<"$out"
+'
 echo "kiwi-stack checks: ok"
