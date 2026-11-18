@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.14 — images nothing uses go when the disk runs full
+
+- After an apply the stack drops the old copies of its images, and when the disk under them is
+  75% full or more also every image that no container and no module of the stack uses. A master
+  in RAM (913 MB for /var) had filled it to 95%, 145 MB of it images of modules it no longer ran.
+
 ## 0.9.13 — verify with a game server asleep
 
 - 0.9.12's `verify` said every container ran, then failed: its last look (is a container
