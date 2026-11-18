@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.16 — an update with little room
+
+- `kiwi-stack update` on a nearly full disk (75 % or more where the images are) takes one image at
+  a time: it pulls it, restarts what runs it and drops the old copy before the next. `podman
+  auto-update` pulls every new image first, and a master in RAM (crumble: 95 % with its own
+  images) had no room for that.
+
 ## 0.9.15 — an apply asks only for what is missing
 
 - An apply pulls only the images the machine does not have yet; newer ones come with the update
