@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.15 — an apply asks only for what is missing
+
+- An apply pulls only the images the machine does not have yet; newer ones come with the update
+  (the weekly timer, `kiwi-stack update`, `kiwi-server apply --update`). A settings change on
+  papaya asked 31 registries each time, and a registry out of reach (codeberg.org on medlar)
+  cost three tries. With `auto_update: off` the apply still asks for every image, as it is the
+  only way they change there.
+- Packages that are installed already are not looked up again: no `apt-get update` at every
+  apply.
+
 ## 0.9.14 — images nothing uses go when the disk runs full
 
 - After an apply the stack drops the old copies of its images, and when the disk under them is
