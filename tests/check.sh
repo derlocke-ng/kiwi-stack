@@ -147,8 +147,12 @@ log=$(mktemp)
 podman() {
     case "$1 $2" in
         "info --format") echo /var/lib/containers/storage ;;
-        "image inspect") case $5 in *nginx:1-alpine) echo sha256:new ;; *pihole*) echo sha256:pi ;; *) return 1 ;; esac ;;
-        "ps -a") printf "%s\n" "km-nginx sha256:old" "km-pihole sha256:pi" "other sha256:x" ;;
+        # as podman shows them: inspect all 64 hex digits, ps the first 12
+        "image inspect") case $5 in
+            *nginx:1-alpine) echo 1111111111111111111111111111111111111111111111111111111111111111 ;;
+            *pihole*) echo 2222222222222222222222222222222222222222222222222222222222222222 ;;
+            *) return 1 ;; esac ;;
+        "ps -a") printf "%s\n" "km-nginx 333333333333" "km-pihole 222222222222" "other 444444444444" ;;
         *) echo "podman $*" >> "$log" ;;
     esac
 }
@@ -159,7 +163,7 @@ KS_STACK_IMAGES=(docker.io/library/nginx:1-alpine docker.io/pihole/pihole:latest
 KS_STACK_SERVICES=(km-nginx km-pihole)
 ks_stack_make_room docker.io/library/nginx:1-alpine >/dev/null
 grep -q "systemctl stop km-nginx.service" "$log"
-grep -q "podman rmi old" "$log"
+grep -q "podman rmi 333333333333" "$log"
 if grep -q "pihole\|other" "$log"; then exit 1; fi    # on an image the stack names, or not the stack'"'"'s: stays
 df() { printf "Use%%\n 50%%\n"; }
 : > "$log"
