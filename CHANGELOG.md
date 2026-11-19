@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.19 — a tagged interface at boot
+
+- `kiwi-vlans.service` runs before the network, when the card may still be down: a tagged
+  interface cannot come up then ("Network is down"), and the unit failed although the kernel
+  brought the interface up with its card a moment later. The script brings the card up first.
+  Seen on a Debian test machine after a restart.
+
 ## 0.9.18 — tagged interfaces (VLANs)
 
 - `kiwi-stack apply` makes the machine's tagged interfaces (`KS_STACK_VLANS`: "ID ADDRESS
