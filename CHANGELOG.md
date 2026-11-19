@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.23 — a unit's state without its log
+
+- `kiwi-stack status` (and so `kiwi-server status`) shows each host unit's state without its
+  journal lines: a timer's last run (the ACME client's output) filled the status. A failed unit
+  still shows its last 10 lines, which say why it failed.
+
 ## 0.9.22 — a quieter status
 
 - `kiwi-stack status` (and so `kiwi-server status`) leaves out podman's

@@ -174,4 +174,10 @@ ks_stack_make_room docker.io/library/nginx:1-alpine >/dev/null
 out=$(printf '%s\n' "Nov 19 04:16:22 papaya.home conmon[2479452]: conmon c8b6188d0921 <nwarn>: Failed to open cgroups file: /sys/fs/cgroup/x/memory.events" \
                      "Nov 19 04:16:23 papaya.home systemd[1]: Started kn-x.service." | bash -c "$(sed -n '/^quiet_conmon()/p' kiwi-stack); quiet_conmon")
 [[ $out == "Nov 19 04:16:23 papaya.home systemd[1]: Started kn-x.service." ]]
+# a unit's status without its log; a failed one with its last lines
+out=$(bash -c "$(sed -n '/^unit_status() {/,/^}/p' kiwi-stack)"'
+STACK_UNITS="km-acme.timer km-broken.service"
+systemctl() { case $1 in is-failed) [[ ${3:-} == km-broken.service ]] ;; status) echo "status ${*:2}" ;; esac; }
+unit_status')
+[[ $out == $'status --no-pager -n 0 km-acme.timer\nstatus --no-pager -n 10 km-broken.service' ]]
 echo "kiwi-stack checks: ok"
