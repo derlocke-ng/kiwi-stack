@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.21 — only the container whose image changed
+
+- **Fixed (0.9.20):** making room on a full disk compared the images' full IDs with the short
+  ones `podman ps` shows, so every container of the stack counted as changed: on crumble all
+  seven stopped, their images went and came back at the start (a minute without the master's
+  VPN). Both are compared by their first 12 hex digits now: only a container whose image the
+  stack no longer names goes. The check's fake podman shows IDs as podman does, and fails
+  against 0.9.20.
+
 ## 0.9.20 — room for a changed image on a full disk
 
 - An apply that changes a container's image (nginx:1 to nginx:1-alpine) pulled the new one while
