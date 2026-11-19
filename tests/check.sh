@@ -170,4 +170,8 @@ df() { printf "Use%%\n 50%%\n"; }
 ks_stack_make_room docker.io/library/nginx:1-alpine >/dev/null
 [[ ! -s $log ]]                              # room enough: nothing stops
 '
+# the status leaves out conmon's cgroups notes, nothing else
+out=$(printf '%s\n' "Nov 19 04:16:22 papaya.home conmon[2479452]: conmon c8b6188d0921 <nwarn>: Failed to open cgroups file: /sys/fs/cgroup/x/memory.events" \
+                     "Nov 19 04:16:23 papaya.home systemd[1]: Started kn-x.service." | bash -c "$(sed -n '/^quiet_conmon()/p' kiwi-stack); quiet_conmon")
+[[ $out == "Nov 19 04:16:23 papaya.home systemd[1]: Started kn-x.service." ]]
 echo "kiwi-stack checks: ok"

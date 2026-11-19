@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.22 — a quieter status
+
+- `kiwi-stack status` (and so `kiwi-server status`) leaves out podman's
+  `conmon … <nwarn>: Failed to open cgroups file` lines: conmon writes one for every exec into a
+  container under systemd (a health check, a cron run), and in a unit's status they hid
+  everything else. Nothing else is left out.
+
 ## 0.9.21 — only the container whose image changed
 
 - **Fixed (0.9.20):** making room on a full disk compared the images' full IDs with the short
