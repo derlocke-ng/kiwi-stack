@@ -124,7 +124,7 @@ grep -q "ip saddr 192.168.20.0/24 tcp dport 443 accept" <<<"$out"
 grep -q "ip saddr 192.168.20.0/24 drop" <<<"$out"
 grep -q "ip saddr 192.168.30.0/24 drop" <<<"$out"
 grep -q "ip saddr 192.168.40.0/24 accept" <<<"$out"
-! grep -q "bad" <<<"$out"
+if grep -q "bad" <<<"$out"; then exit 1; fi
 '
 # tagged interfaces: names that fit, a bad entry left out, the card of the default route when none is named
 bash -c '
@@ -138,5 +138,32 @@ out=$(ks_vlan_lines 2>/dev/null)
 unset KS_STACK_VLANS
 [[ -z $(ks_vlan_lines) ]]
 bash -n <<<"$KS_VLANS_UP"
+'
+# room for a changed image on a full disk: only a container of the stack whose image it no longer names goes
+bash -c '
+set -euo pipefail
+. ./lib.sh
+log=$(mktemp)
+podman() {
+    case "$1 $2" in
+        "info --format") echo /var/lib/containers/storage ;;
+        "image inspect") case $5 in *nginx:1-alpine) echo sha256:new ;; *pihole*) echo sha256:pi ;; *) return 1 ;; esac ;;
+        "ps -a") printf "%s\n" "km-nginx sha256:old" "km-pihole sha256:pi" "other sha256:x" ;;
+        *) echo "podman $*" >> "$log" ;;
+    esac
+}
+systemctl() { echo "systemctl $*" >> "$log"; }
+df() { printf "Use%%\n 94%%\n"; }
+KS_STACK_RUNTIME=podman
+KS_STACK_IMAGES=(docker.io/library/nginx:1-alpine docker.io/pihole/pihole:latest)
+KS_STACK_SERVICES=(km-nginx km-pihole)
+ks_stack_make_room docker.io/library/nginx:1-alpine >/dev/null
+grep -q "systemctl stop km-nginx.service" "$log"
+grep -q "podman rmi old" "$log"
+if grep -q "pihole\|other" "$log"; then exit 1; fi    # on an image the stack names, or not the stack'"'"'s: stays
+df() { printf "Use%%\n 50%%\n"; }
+: > "$log"
+ks_stack_make_room docker.io/library/nginx:1-alpine >/dev/null
+[[ ! -s $log ]]                              # room enough: nothing stops
 '
 echo "kiwi-stack checks: ok"
