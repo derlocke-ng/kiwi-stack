@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.20 — room for a changed image on a full disk
+
+- An apply that changes a container's image (nginx:1 to nginx:1-alpine) pulled the new one while
+  the container still held the old: on a master in RAM (crumble: 55 MB free of 913 MB) the pull
+  failed and the apply stopped (safely: nothing had changed). With the disk 85 % full or more, a
+  container of the stack whose image it no longer names stops (its unit first) and goes with its
+  image before the pull; the units bring it back on the new one.
+- tests/check.sh: two checks that could not fail (`! grep` does not stop a `set -e` script) fail
+  now when they should.
+
 ## 0.9.19 — a tagged interface at boot
 
 - `kiwi-vlans.service` runs before the network, when the card may still be down: a tagged
