@@ -126,4 +126,17 @@ grep -q "ip saddr 192.168.30.0/24 drop" <<<"$out"
 grep -q "ip saddr 192.168.40.0/24 accept" <<<"$out"
 ! grep -q "bad" <<<"$out"
 '
+# tagged interfaces: names that fit, a bad entry left out, the card of the default route when none is named
+bash -c '
+set -euo pipefail
+. ./lib.sh
+[[ $(ks_vlan_name eth0 20) == eth0.20 && $(ks_vlan_name enp0s20f0u1u2 4000) == vlan4000 ]]
+ip() { [[ $* == "-o -4 route show default" ]] && echo "default via 192.168.1.1 dev enp1s0 proto static"; }
+KS_STACK_VLANS=("20 192.168.20.5/24" "30 192.168.30.5/24 eth1" "5000 10.0.0.1/24" "x y")
+out=$(ks_vlan_lines 2>/dev/null)
+[[ $out == "enp1s0 20 192.168.20.5/24 enp1s0.20"$'"'"'\n'"'"'"eth1 30 192.168.30.5/24 eth1.30" ]]
+unset KS_STACK_VLANS
+[[ -z $(ks_vlan_lines) ]]
+bash -n <<<"$KS_VLANS_UP"
+'
 echo "kiwi-stack checks: ok"

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.18 — tagged interfaces (VLANs)
+
+- `kiwi-stack apply` makes the machine's tagged interfaces (`KS_STACK_VLANS`: "ID ADDRESS
+  [CARD]", kiwi-modules 0.98.0, kiwi-server docs/design/lans.md step 2): `eth0.20` on the card
+  named, or on the card of the default route, with its address and no default route
+  (`vlan20` where the name would be too long). `kiwi-vlans.service` makes them again at boot,
+  after their card and before the network and the containers. A VLAN that is gone or changed
+  loses its interface first. Without VLANs the interface, `/etc/kiwi-server/vlans` and the unit
+  are gone. A bundle from before has none and changes nothing.
+- Proven in kiwi-server's `tests/drills/vlan-netns.py`: a switch with VLAN filtering, the node
+  on a trunk, a device on an access port of VLAN 20 reaches it there, an untagged device with
+  an address of VLAN 20 does not.
+
 ## 0.9.17 — the groups of the home network
 
 - `kiwi-stack apply` keeps what each group of the home network may open on this machine
