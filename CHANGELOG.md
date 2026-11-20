@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.28 — a part this machine no longer runs stops
+
+- **Fixed: a machine a part was switched away from kept running it after its apply**, now that it
+  keeps the part ready (kiwi-server's pair): its containers moved from `KS_STACK_SERVICES` to
+  `KS_STACK_READY`, which no apply stopped. The apply stops one that runs, before the standby's
+  fetch writes under it.
+
 ## 0.9.27 — the proxy with the ready parts' sites
 
 - `kiwi-stack ready start` puts the proxy's config with the sites of the parts kept ready in
