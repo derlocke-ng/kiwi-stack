@@ -93,10 +93,13 @@ compose() { docker compose --file "$STACK_DIR/docker-compose.yml" "$@"; }
 units() { local s; for s in $STACK_SERVICES; do printf '%s.service\n' "$s"; done; }
 # The parts kept ready for another machine (a standby): made, not started. A switch starts them
 # here in seconds (kiwi-server switch); the apply that follows makes them the machine's own.
-ready() {
-    local verb=${1:-list} s
+ready() {     # VERB [CONTAINER...]: those of the ready ones, or all of them
+    local verb=${1:-list} s want=" ${*:2} " all=()
     # shellcheck disable=SC2086
-    set -- ${STACK_READY:-}
+    for s in ${STACK_READY:-}; do
+        [[ $want == "  " || $want == *" $s "* ]] && all+=("$s")
+    done
+    set -- "${all[@]}"
     if [[ $verb == list ]]; then
         for s in "$@"; do
             if [[ $STACK_RUNTIME == podman ]]; then printf '%s %s\n' "$s" "$(systemctl is-active "$s.service" 2>/dev/null)"
@@ -118,11 +121,11 @@ ready() {
                else
                    compose --profile kiwi-ready stop "$@" || true
                fi ;;
-        *)     echo "usage: kiwi-stack ready [list|start|stop]" >&2; return 1 ;;
+        *)     echo "usage: kiwi-stack ready [list|start|stop] [CONTAINER...]" >&2; return 1 ;;
     esac
 }
 if [[ ${1:-} == ready ]]; then
-    ready "${2:-list}"
+    ready "${2:-list}" "${@:3}"
     exit $?
 fi
 # The host units (kn-gateway.service …) are ordered After=kiwi-stack.service,
