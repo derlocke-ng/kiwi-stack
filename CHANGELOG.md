@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.27 — the proxy with the ready parts' sites
+
+- `kiwi-stack ready start` puts the proxy's config with the sites of the parts kept ready in
+  place (kiwi-modules' `nginx-ready.conf`, written over `nginx.conf` in place) and reloads it, so
+  their names answer at once; a config nginx refuses is put back as it was.
+
 ## 0.9.26 — parts kept ready for another machine
 
 - `KS_STACK_READY` (kiwi-modules 0.112.0): the containers of a part this machine keeps ready for
