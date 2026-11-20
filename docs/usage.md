@@ -13,6 +13,7 @@ Every command runs on the machine, as root.
 | `kiwi-stack logs [service]` | Follows the log of one container, or of all of them. |
 | `kiwi-stack update` | Fetches newer images and restarts the containers that got one. |
 | `kiwi-stack vpn-restart` | Restarts the VPN client and the containers that depend on it. A daily timer runs this when the bundle asks for it. |
+| `kiwi-stack ready [list\|start\|stop] [CONTAINER...]` | The containers of parts this machine keeps ready for another one (a standby): `list` says each one's state; `start` starts them (kiwi-server's switch does), `stop` stops them. An apply makes them and never starts them. |
 | `kiwi-stack backup` | Saves the machine's data now. |
 | `kiwi-stack snapshots` | Lists the saved states. |
 | `kiwi-stack restore` | Brings data back from a saved state. |
