@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.26 — parts kept ready for another machine
+
+- `KS_STACK_READY` (kiwi-modules 0.112.0): the containers of a part this machine keeps ready for
+  another one. Their images are pulled with the others, docker makes their containers (profile
+  `kiwi-ready`), podman has their quadlets without `[Install]`; nothing an apply or a restart does
+  starts them. `kiwi-stack ready list|start|stop [CONTAINER...]`: kiwi-server's switch starts them.
+
 ## 0.9.25 — the time from the network
 
 - A machine asks the time servers its stack names (`KS_STACK_NTP`: its site's Pi-hole, else the

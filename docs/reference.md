@@ -17,6 +17,7 @@ start with `KS_`.
 | `KS_STACK=1` | The bundle has a stack. |
 | `KS_STACK_DIR`, `KS_STACK_USER`, `KS_STACK_PREFIX`, `KS_STACK_RUNTIME` | The stack's directory, its service user, the prefix of its container names, and `podman` or `docker`. |
 | `KS_STACK_MODULES`, `KS_STACK_SERVICES`, `KS_STACK_IMAGES`, `KS_STACK_QUADLETS`, `KS_STACK_UNITS` | The modules, the containers, their images, the unit files of the containers and the host units. |
+| `KS_STACK_READY` | The containers of parts kept ready for another machine (only when there are some): made and their images pulled, never started by an apply; `STACK_READY` in the stack's settings, used by `kiwi-stack ready`. |
 | `KS_STACK_FILES`, `KS_STACK_DIRS` | Every file with its mode (`path:mode`), and the data directories. |
 | `KS_STACK_PORTS`, `KS_STACK_SYSCTL`, `KS_STACK_KMODS` | The ports to open, the kernel settings and the kernel modules. |
 | `KS_STACK_VPN_CONTAINER`, `KS_STACK_VPN_DEPENDENTS`, `KS_STACK_MESH_SUBNET`, `KS_STACK_MESH_VIA`, `KS_STACK_HOSTS`, `KS_STACK_DNS_IP`, `KS_STACK_NO_RESOLVED_STUB` | The network: the VPN client and what depends on it, the route into the mesh, the names for `/etc/hosts`, and the stack's resolver. |
