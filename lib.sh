@@ -797,6 +797,8 @@ ks_stack_unpack() {
         old_rt=$(sed -n 's/^STACK_RUNTIME=//p' "$KS_STACK_ENV")
         old_dir=$(sed -n 's/^STACK_DIR=//p' "$KS_STACK_ENV")
         old_services=$(sed -n 's/^STACK_SERVICES="\(.*\)"$/\1/p' "$KS_STACK_ENV")
+        # and those of parts it kept ready (one started by a switch runs until it goes here)
+        old_services+=" $(sed -n 's/^STACK_READY="\(.*\)"$/\1/p' "$KS_STACK_ENV")"
     fi
     if [[ -n $old_rt && ( $old_rt != "$KS_STACK_RUNTIME" || ( -n $old_dir && $old_dir != "$dd" ) ) ]] && [[ -x /usr/local/bin/kiwi-stack ]]; then
         # the installed kiwi-stack still speaks the old runtime and directory: take that stack
@@ -813,7 +815,7 @@ ks_stack_unpack() {
         # unit would stay (a target does not stop what merely wants it)
         for svc in $old_services; do
             keep=0
-            for u in "${KS_STACK_SERVICES[@]}"; do [[ $u == "$svc" ]] && keep=1; done
+            for u in "${KS_STACK_SERVICES[@]}" "${KS_STACK_READY[@]}"; do [[ $u == "$svc" ]] && keep=1; done
             (( keep )) && continue
             [[ $svc =~ ^[A-Za-z0-9_.-]+$ ]] || continue
             ks_say "stopping $svc — no module runs it any more"
