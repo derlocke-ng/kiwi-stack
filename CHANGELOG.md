@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.25 — the time from the network
+
+- A machine asks the time servers its stack names (`KS_STACK_NTP`: its site's Pi-hole, else the
+  master's) first, the public pool behind them: a drop-in for timesyncd (which takes its
+  fallbacks only when no server is named, so the pool is named after them), or `server … iburst
+  prefer` lines at the top of chrony.conf between kiwi-server's markers. None named: the
+  drop-in and the lines go again.
+- The groups of the home network may always ask the time (udp 123), as they may always ask DNS.
+
 ## 0.9.24 — the host's second resolver answers every name
 
 - While the stack runs, the host asks its own Pi-hole and, behind it, a public resolver: that
