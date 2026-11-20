@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.24 — the host's second resolver answers every name
+
+- While the stack runs, the host asks its own Pi-hole and, behind it, a public resolver: that
+  one is Cloudflare's now (1.1.1.1, 1.0.0.1), not Quad9's, which leaves out names it holds to be
+  malicious. What is blocked is what the network's blocklist says.
+
 ## 0.9.23 — a unit's state without its log
 
 - `kiwi-stack status` (and so `kiwi-server status`) shows each host unit's state without its
