@@ -180,4 +180,11 @@ STACK_UNITS="km-acme.timer km-broken.service"
 systemctl() { case $1 in is-failed) [[ ${3:-} == km-broken.service ]] ;; status) echo "status ${*:2}" ;; esac; }
 unit_status')
 [[ $out == $'status --no-pager -n 0 km-acme.timer\nstatus --no-pager -n 10 km-broken.service' ]]
+# the backup before an update asks the backup module for a backup (its script wants the verb:
+# without it, it prints its usage and every update stopped, 0.9.31)
+backup_first=$(sed -n '/^backup_first() {/,/^}/p' kiwi-stack)
+mkdir -p "$tmp/bf/kiwi"
+printf '#!/bin/sh\n[ "$1" = backup ] || { echo "usage: ..." >&2; exit 1; }\necho made\n' > "$tmp/bf/kiwi/backup.sh"
+chmod +x "$tmp/bf/kiwi/backup.sh"
+[[ $(STACK_DIR=$tmp/bf bash -c "$backup_first"$'\nbackup_first') == $'a backup first\nmade' ]]
 echo "kiwi-stack checks: ok"
