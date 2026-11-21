@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.32 — only the stack
+
+- A role script run with `--stack-only` does only the stack's steps: the fleet's names in
+  /etc/hosts, the stack's files and quadlets, a restart of what changed, the check that every
+  container runs. kiwi-server sends it so when nothing else of the machine changed (a part's
+  settings, the network's names): seconds instead of minutes. Without a stack on the machine yet,
+  the whole role runs as before.
+
 ## 0.9.31 — a backup before an update
 
 - `kiwi-stack update` (an apply with `--update`, and the weekly update) makes a backup first, on a
