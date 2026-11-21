@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.31 — a backup before an update
+
+- `kiwi-stack update` (an apply with `--update`, and the weekly update) makes a backup first, on a
+  machine that has the backup module. When the backup fails, nothing is updated.
+  `KIWI_UPDATE_NO_BACKUP=1` leaves it out.
+
 ## 0.9.30 — the role script does not stay
 
 - The role script (`/var/lib/kiwi-server/role.sh`) carries every secret of its machine. It removes
