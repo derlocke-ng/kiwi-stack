@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.30 — the role script does not stay
+
+- The role script (`/var/lib/kiwi-server/role.sh`) carries every secret of its machine. It removes
+  itself once it has done its work: nothing reads it again (an apply sends a fresh copy, the version
+  is in stack.env). One that failed stays, for the next boot's try; a copy run from elsewhere is left.
+
 ## 0.9.29 — parts that run by a permission
 
 - `kiwi-stack lease [list|start|stop] [CONTAINER...]`: the containers of this machine's parts that
