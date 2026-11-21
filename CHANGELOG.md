@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.33 — updates run again
+
+- `kiwi-stack update` called the backup module's script without its `backup` verb, so the script
+  printed its usage, the backup before the update counted as failed and nothing was updated on
+  any machine with a backup module since 0.9.31. It asks for a backup now; tests/check.sh runs
+  that call against a stand-in script.
+
 ## 0.9.32 — only the stack
 
 - A role script run with `--stack-only` does only the stack's steps: the fleet's names in
