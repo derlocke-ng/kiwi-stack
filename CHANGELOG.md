@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.29 — parts that run by a permission
+
+- `kiwi-stack lease [list|start|stop] [CONTAINER...]`: the containers of this machine's parts that
+  have a standby (`STACK_LEASED`, kiwi-modules 0.116.0). They run only while the machine holds a
+  permission for them; kiwi-server's `kiwi-lease` calls this.
+- An apply leaves them to that permission: `verify` does not count them as down, a changed one is
+  restarted only when it runs (`try-restart`), docker gets them made, and `kiwi-lease tick` runs at
+  the end of the apply. The daily VPN restart restarts one only when it runs.
+
 ## 0.9.28 — a part this machine no longer runs stops
 
 - **Fixed: a machine a part was switched away from kept running it after its apply**, now that it
