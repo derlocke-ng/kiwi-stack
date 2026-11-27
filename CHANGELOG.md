@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.42 — a question for an image without a shell
+
+- `KS_STACK_CHECKS`: a command written as `exec PROGRAM ARGS` runs the program itself in the
+  throwaway container, without `sh -c`. Kanidm's image has no shell, and its own config test
+  (`kanidmd configtest`) could not be asked.
+
 ## 0.9.41 — verify names a service that runs but is not well
 
 - `kiwi-stack verify` (and so the end of every apply, and `kiwi-stack status`) names the
