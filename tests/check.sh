@@ -288,6 +288,10 @@ out=$(KS_PENDING=$tmp/un/restart-pending bash -c '
 set -euo pipefail
 . ./lib.sh
 KS_SYSTEMD_DIR=$1/units; KS_STACK_DIR=$1/stack
+# as in the role: its error trap, inherited by subshells. A unit that names no script must not trip it
+# (it fires in the subshell that feeds a loop, so its word goes to a file, not to the loop)
+trap '"'"'echo "$BASH_COMMAND" >> "$KS_SYSTEMD_DIR/../trapped"; exit 1'"'"' ERR
+set -E
 ks_say() { echo "say: $*"; }
 ks_warn() { echo "warn: $*"; }
 systemctl() {
@@ -312,6 +316,7 @@ echo "-- from nothing"; KS_CHANGED=(); ks_stack_units_start 1 | grep -c "^restar
 echo "-- an earlier apply ended before its units ran"; : > "$(ks_pending_units)"; KS_STACK_FILES=(); KS_STACK_QUADLETS=(); KS_STACK_SERVICES=()
 ks_stack_note_pending; ks_stack_units_start 0 | grep -c "^restart"
 echo "marker left: $([[ -e $(ks_pending_units) ]] && echo yes || echo no)"' _ "$tmp/un")
+if [[ -s $tmp/un/trapped ]]; then echo "the role's error trap fired while the units were judged: $(sort -u "$tmp/un/trapped" | tr '\n' ' ')"; exit 1; fi
 [[ $out == "-- nothing changed
 restart kn-broken.service
 -- a container's files changed

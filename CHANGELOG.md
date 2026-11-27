@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.39 — no false alarm from a unit that names no script
+
+- 0.9.38's look for a unit's own files failed in a subshell for every unit that names no script
+  under `kiwi/`, and the role's error trap printed "the role stopped … in ks_unit_claims" for
+  each. The role went on and ended well, and the units were judged right, but the lines read
+  like a failed apply (seen on a master with eight such units, 27 Nov 2026).
+
 ## 0.9.38 — a part's script runs again when its own files changed
 
 - 0.9.37 started all of the stack's units again for any change in the stack. A setting of one
