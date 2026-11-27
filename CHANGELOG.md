@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.38 — a part's script runs again when its own files changed
+
+- 0.9.37 started all of the stack's units again for any change in the stack. A setting of one
+  part then restarted a gateway's routes too. A unit now starts again when a file of its own
+  changed: the unit, a script it runs, a file beside the script of the same name
+  (`cloud-accounts.sh` and `cloud-accounts.env`) or in a folder of that name (`backup/`). A
+  changed file under `kiwi/` that no unit claims starts them all, to be sure, as does a start
+  from nothing or an apply that ended before its units ran; a unit that is not fine starts
+  alone. A restarted container is no reason.
+  Tried on a gateway with the accounts: a vault's setting restarted the vault's container and
+  left four units; the accounts' password length ran the accounts' script and left the other
+  three.
+
 ## 0.9.37 — a quicker role
 
 Measured on a machine with 34 containers, a gateway and 15 open ports (papaya, 27 Nov 2026): the
