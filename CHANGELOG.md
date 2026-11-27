@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.41 — verify names a service that runs but is not well
+
+- `kiwi-stack verify` (and so the end of every apply, and `kiwi-stack status`) names the
+  stack's containers that run and fail their own health check: "unhealthy (it runs, and its
+  own check fails): kn-vault". It is no failure by itself: an apply that changed something
+  else does not fail for a part that hangs since yesterday. A container the apply just
+  restarted is "starting" and is not named.
+
 ## 0.9.40 — a part is asked before its new files are written
 
 - **`KS_STACK_CHECKS`** (`container|command`): before an apply writes anything of the stack, the

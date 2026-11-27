@@ -106,6 +106,12 @@ touch "$KS_SLEEPING/kn-game-a"
 # as `kiwi-stack verify` runs it: set -e alive (inside `x || y` bash switches it off, and the bug hid)
 set +e; (set -e; verify >/dev/null); rc=$?; set -e
 (( rc == 0 )) || { echo "verify failed ($rc) with a container asleep (its inspect fails)"; exit 1; }
+# one that runs but fails its own health check is named, and verify still passes; another stack'"'"'s is not
+podman() { [[ $1 == ps ]] && printf "kn-up\nsomeone-elses\n"; return 0; }
+said=$(verify 2>&1 >/dev/null)
+[[ $said == "unhealthy (it runs, and its own check fails): kn-up — kiwi-stack logs <name>" ]] || { echo "verify on an unhealthy one said: $said"; exit 1; }
+podman() { return 0; }
+[[ -z $(verify 2>&1 >/dev/null) ]]
 '
 # install into a prefix
 KIWI_PREFIX=$tmp/p bash install.sh install >/dev/null
