@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.35 — a new name restarts nothing
+
+- A new site on a machine gives every container one more name (an `AddHost` line in its
+  quadlet), and until now every one of them restarted for it: adding a vault to a machine
+  restarted the eleven containers of its Nextcloud (27 Nov 2026). A quadlet that changed in
+  nothing but these lines no longer restarts its container: the names are written into the
+  running container's hosts file, in place, and are there at once; names that went are taken
+  out. Whatever else changed in a quadlet restarts as before. Names an apply did not get to hand
+  over (it ended before) become a restart at the next one. Tried on a uCore machine: a third
+  site added and taken away again, the proxy restarted, eleven containers kept running and
+  resolved the name.
+
 ## 0.9.34 — an apply no longer cuts the containers' DNS
 
 - On a Podman machine with firewalld, every apply reloaded firewalld to open the stack's ports.

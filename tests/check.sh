@@ -217,4 +217,41 @@ ks_firewall_trust_stack')
 -q --add-port=2456-2458/udp
 -q --permanent --zone=trusted --add-source=172.128.0.0/24
 -q --zone=trusted --add-source=172.128.0.0/24" ]]
+# A new site gives every container of the machine another name (an AddHost line in its quadlet).
+# That alone restarts nothing: the names are written into the running container's hosts file, in
+# place. A quadlet that changed in anything else restarts as before; names an apply could not hand
+# over (it ended before) become a restart at the next one.
+mkdir -p "$tmp/nm/q" "$tmp/nm/etc"
+printf '[Container]\nImage=a\nAddHost=cloud.m.home:172.128.0.5\nAddHost=gone.m.home:172.128.0.5\nIP=172.128.0.9\n' > "$tmp/nm/q/kn-app.container"
+printf '[Container]\nImage=b\nAddHost=cloud.m.home:172.128.0.5\n' > "$tmp/nm/q/kn-other.container"
+printf '127.0.0.1\tlocalhost\n172.128.0.5\tcloud.m.home\n172.128.0.5\tgone.m.home\n172.128.0.9\tkn-app\n' > "$tmp/nm/hosts"
+inode=$(stat -c %i "$tmp/nm/hosts")
+out=$(KS_QUADLET_DIR=$tmp/nm/q KS_PENDING=$tmp/nm/etc/restart-pending KS_PENDING_NAMES=$tmp/nm/etc/names-pending HOSTS=$tmp/nm/hosts bash -c '
+set -euo pipefail
+. ./lib.sh
+ks_say() { echo "say: $*"; }
+ks_replace() { mv "$1" "$2"; }
+systemctl() { [[ $1 == is-active ]]; }
+podman() { [[ $4 == kn-app ]] && echo "$HOSTS"; }
+KS_STACK_DIR=/nonexistent; KS_STACK_FILES=(); KS_STACK_QUADLETS=(kn-app.container kn-other.container); KS_STACK_SERVICES=(kn-app kn-other)
+ks_stack_remember
+sed -i "s/^AddHost=gone.m.home.*/AddHost=vault.m.home:172.128.0.5/" "$KS_QUADLET_DIR/kn-app.container"
+sed -i "s/^Image=b/Image=c/" "$KS_QUADLET_DIR/kn-other.container"; echo "AddHost=vault.m.home:172.128.0.5" >> "$KS_QUADLET_DIR/kn-other.container"
+ks_stack_compare
+ks_stack_note_pending
+echo "changed: ${KS_CHANGED[*]##*/}; names only: ${KS_NAMES_ONLY[*]##*/}; noted: $(cat "$KS_PENDING_NAMES")"
+echo "due: $(ks_stack_restart_due | tr "\n" " ")"
+ks_stack_names_now
+echo "failed: ${KS_NAMES_FAILED[*]:-none}; noted still: $([[ -e $KS_PENDING_NAMES ]] && echo yes || echo no)"
+# an apply that ended before it handed the names over: the next one restarts that container
+echo kn-app > "$KS_PENDING_NAMES"; rm -f "$KS_PENDING"; KS_NAMES_ONLY=(); KS_CHANGED=()
+ks_stack_note_pending
+echo "after a cut-off run, due: $(ks_stack_restart_due | tr "\n" " ")"')
+[[ $out == "changed: kn-other.container; names only: kn-app.container; noted: kn-app
+due: kn-other 
+say: 1 container(s) took the machine's new names without a restart
+failed: none; noted still: no
+after a cut-off run, due: kn-app " ]]
+[[ $(cat "$tmp/nm/hosts") == $'127.0.0.1\tlocalhost\n172.128.0.9\tkn-app\n172.128.0.5\tcloud.m.home\n172.128.0.5\tvault.m.home' ]]
+[[ $(stat -c %i "$tmp/nm/hosts") == "$inode" ]]                   # written in place: the container sees it
 echo "kiwi-stack checks: ok"
