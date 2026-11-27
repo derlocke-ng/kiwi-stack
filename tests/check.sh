@@ -201,8 +201,8 @@ systemctl() { [[ $1 == is-active ]]; }
 firewall-cmd() {
     local a=" $* "
     case $a in
-        *" --query-port=443/tcp "*) return 0 ;;                      # there already, in both
-        *" --query-port="*|*" --query-source="*) return 1 ;;
+        *" --list-ports "*) echo "443/tcp 80/tcp"; return 0 ;;       # 443 is there already, in both
+        *" --query-source="*) return 1 ;;
     esac
     echo "$*"
 }
@@ -226,14 +226,14 @@ printf '[Container]\nImage=a\nAddHost=cloud.m.home:172.128.0.5\nAddHost=gone.m.h
 printf '[Container]\nImage=b\nAddHost=cloud.m.home:172.128.0.5\n' > "$tmp/nm/q/kn-other.container"
 printf '127.0.0.1\tlocalhost\n172.128.0.5\tcloud.m.home\n172.128.0.5\tgone.m.home\n172.128.0.9\tkn-app\n' > "$tmp/nm/hosts"
 inode=$(stat -c %i "$tmp/nm/hosts")
-out=$(KS_QUADLET_DIR=$tmp/nm/q KS_PENDING=$tmp/nm/etc/restart-pending KS_PENDING_NAMES=$tmp/nm/etc/names-pending HOSTS=$tmp/nm/hosts bash -c '
+out=$(KS_QUADLET_DIR=$tmp/nm/q KS_PENDING=$tmp/nm/etc/restart-pending KS_PENDING_NAMES=$tmp/nm/etc/names-pending KS_PENDING_UNITS=$tmp/nm/etc/units-pending KS_SYSTEMD_DIR=$tmp/nm/units HOSTS=$tmp/nm/hosts bash -c '
 set -euo pipefail
 . ./lib.sh
 ks_say() { echo "say: $*"; }
 ks_replace() { mv "$1" "$2"; }
 systemctl() { [[ $1 == is-active ]]; }
 podman() { [[ $4 == kn-app ]] && echo "$HOSTS"; }
-KS_STACK_DIR=/nonexistent; KS_STACK_FILES=(); KS_STACK_QUADLETS=(kn-app.container kn-other.container); KS_STACK_SERVICES=(kn-app kn-other)
+KS_STACK_DIR=/nonexistent; KS_STACK_FILES=(); KS_STACK_UNITS=(); KS_STACK_QUADLETS=(kn-app.container kn-other.container); KS_STACK_SERVICES=(kn-app kn-other)
 ks_stack_remember
 sed -i "s/^AddHost=gone.m.home.*/AddHost=vault.m.home:172.128.0.5/" "$KS_QUADLET_DIR/kn-app.container"
 sed -i "s/^Image=b/Image=c/" "$KS_QUADLET_DIR/kn-other.container"; echo "AddHost=vault.m.home:172.128.0.5" >> "$KS_QUADLET_DIR/kn-other.container"
@@ -254,6 +254,58 @@ failed: none; noted still: no
 after a cut-off run, due: kn-app " ]]
 [[ $(cat "$tmp/nm/hosts") == $'127.0.0.1\tlocalhost\n172.128.0.9\tkn-app\n172.128.0.5\tcloud.m.home\n172.128.0.5\tvault.m.home' ]]
 [[ $(stat -c %i "$tmp/nm/hosts") == "$inode" ]]                   # written in place: the container sees it
+# A file that is there already as it should be is left alone (the same inode: a container has it
+# mounted), one whose content or mode differs is replaced; a unit that did not change costs no
+# reload of systemd
+out=$(bash -c '
+set -euo pipefail
+. ./lib.sh
+d=$1; reloads=0
+systemctl() { [[ $1 == daemon-reload ]] && reloads=$((reloads + 1)); return 0; }
+ks_parent_dir() { mkdir -p "$(dirname "$1")"; }
+me=$(id -un):$(id -gn)
+ks_write "$d/f" 0644 "$me" <<<one; a=$(stat -c %i "$d/f"); echo "wrote $KS_WROTE"
+ks_write "$d/f" 0644 "$me" <<<one; echo "wrote $KS_WROTE same inode $([[ $(stat -c %i "$d/f") == "$a" ]] && echo yes || echo no)"
+ks_write "$d/f" 0644 "$me" <<<two; echo "wrote $KS_WROTE"
+ks_write "$d/f" 0600 "$me" <<<two; echo "wrote $KS_WROTE mode $(stat -c %a "$d/f")"
+KS_SYSTEMD_DIR=$d/units
+# units are root'"'"'s; here they are written as this user, the rest of ks_unit is the real one
+ks_write() { mkdir -p "$(dirname "$1")"; cat > "$1.tmp"; ks_put "$1.tmp" "$1" "${2:-0644}" "$me"; }
+ks_unit a.service <<<"[Unit]"; ks_unit a.service <<<"[Unit]"; ks_unit a.service <<<"[Unit] "
+echo "reloads $reloads"' _ "$tmp/put")
+[[ $out == $'wrote 1\nwrote 0 same inode yes\nwrote 1\nwrote 1 mode 600\nreloads 2' ]]
+# The stack's units start again when something of the stack changed or a container restarted, and
+# one by one when a unit is not fine; an apply that changed nothing leaves them
+out=$(KS_PENDING_UNITS=$tmp/units-pending bash -c '
+set -euo pipefail
+. ./lib.sh
+ks_say() { echo "say: $*"; }
+ks_warn() { echo "warn: $*"; }
+systemctl() {
+    case $1 in
+        enable) return 0 ;;
+        is-active) [[ $3 != kn-broken.service ]] ;;
+        show) echo "Result=exit-code"; echo "ExecMainStatus=1"; echo "ExecMainExitTimestampMonotonic=5" ;;
+        restart) echo "restart ${*: -1}" ;;
+    esac
+}
+KS_STACK_UNITS=(kn-gateway.service kn-setup.service kn-broken.service)
+echo "-- nothing changed"; ks_stack_units_start 0
+echo "-- a container restarted"; ks_stack_units_start 1
+echo "-- an earlier apply ended before its units ran"; : > "$KS_PENDING_UNITS"; ks_stack_units_start 0
+echo "marker left: $([[ -e $KS_PENDING_UNITS ]] && echo yes || echo no)"')
+[[ $out == "-- nothing changed
+restart kn-broken.service
+say: 2 of the stack's units left as they run: nothing of the stack changed
+-- a container restarted
+restart kn-gateway.service
+restart kn-setup.service
+restart kn-broken.service
+-- an earlier apply ended before its units ran
+restart kn-gateway.service
+restart kn-setup.service
+restart kn-broken.service
+marker left: no" ]]
 # The role's log is root's alone, and a trace (bash -x) is switched off before anything goes into
 # it: the script carries the stack's files in its variables
 touch "$tmp/role.log"; chmod 0644 "$tmp/role.log"

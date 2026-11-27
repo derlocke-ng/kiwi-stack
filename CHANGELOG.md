@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.9.37 — a quicker role
+
+Measured on a machine with 34 containers, a gateway and 15 open ports (papaya, 27 Nov 2026): the
+role of an apply that changes nothing went from 70 to 38 seconds.
+
+- **The stack's units start again only when there is a reason**: something of the stack changed
+  (a file, a quadlet, a unit), a container restarted, the stack started from nothing, or a unit
+  is not fine. An apply that changed nothing restarted them all: 17 seconds there, a gateway's
+  routes gone for a moment, and a backup started. A timer's service counts as fine while its
+  timer runs.
+- **The stack-only path runs the units too** when something changed. Until now it left them, and
+  a setting that a part's own script applies (shared folders, a sign-in set-up) waited for the
+  next full apply.
+- **firewalld is asked once** which ports are open; only missing ones are added. Four questions
+  a port took 12 seconds with 15 ports.
+- **A file that is there already as it should be is left alone**: no rewrite, no sync, the same
+  inode. A unit that did not change costs no reload of systemd (fifteen a run before).
+- The stack's target was looked for among the quadlets and counted as changed at every apply.
+- `KS_TIMES=1` (kiwi-server: `KIWI_APPLY_TIMES=1`): each step of the role with its time, and the
+  names of the files that changed. Names only, never a value.
+
 ## 0.9.36 — the role's log is root's alone, and never a trace
 
 - `/var/log/kiwi-server-role.log` was readable by every user of the machine. It is root's alone
