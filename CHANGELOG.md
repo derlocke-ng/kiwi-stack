@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.36 — the role's log is root's alone, and never a trace
+
+- `/var/log/kiwi-server-role.log` was readable by every user of the machine. It is root's alone
+  now (0600), set at every run.
+- A role or stack script run under `bash -x` switches the trace off before its output goes into
+  that log: the script carries the stack's files (keys, passwords) in its variables, and a trace
+  would write them all there (27 Nov 2026, a timing trace on a test machine).
+
 ## 0.9.35 — a new name restarts nothing
 
 - A new site on a machine gives every container one more name (an `AddHost` line in its

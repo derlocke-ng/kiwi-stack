@@ -254,4 +254,14 @@ failed: none; noted still: no
 after a cut-off run, due: kn-app " ]]
 [[ $(cat "$tmp/nm/hosts") == $'127.0.0.1\tlocalhost\n172.128.0.9\tkn-app\n172.128.0.5\tcloud.m.home\n172.128.0.5\tvault.m.home' ]]
 [[ $(stat -c %i "$tmp/nm/hosts") == "$inode" ]]                   # written in place: the container sees it
+# The role's log is root's alone, and a trace (bash -x) is switched off before anything goes into
+# it: the script carries the stack's files in its variables
+touch "$tmp/role.log"; chmod 0644 "$tmp/role.log"
+out=$(bash -x -c '
+. ./lib.sh
+KS_LOG=$1
+ks_log_open 2>/dev/null
+case $- in *x*) echo traced ;; *) echo quiet ;; esac
+stat -c %a "$KS_LOG"' _ "$tmp/role.log" 2>/dev/null)
+[[ $out == $'quiet\n600' ]]
 echo "kiwi-stack checks: ok"
