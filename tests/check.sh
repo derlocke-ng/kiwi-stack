@@ -354,4 +354,58 @@ ks_log_open 2>/dev/null
 case $- in *x*) echo traced ;; *) echo quiet ;; esac
 stat -c %a "$KS_LOG"' _ "$tmp/role.log" 2>/dev/null)
 [[ $out == $'quiet\n600' ]]
+# A part's word on its new settings (KS_STACK_CHECKS) before the stack is written: asked in a
+# throwaway container with the new files from a copy; not asked without its image, or when nothing
+# of it changes; its no stops the apply while every file on the machine is still the old one
+mkdir -p "$tmp/pf/b/quadlets" "$tmp/pf/b/kn-nginx" "$tmp/pf/stack/kn-nginx/acme" "$tmp/pf/q" "$tmp/pf/run"
+printf 'Image=nginx:1\nVolume=%s/kn-nginx/nginx.conf:/etc/nginx/nginx.conf:ro,z\nVolume=%s/kn-nginx/privkey.pem:/etc/nginx/privkey.pem:ro,z\nVolume=%s/kn-nginx/acme:/etc/nginx/acme:z\nVolume=%s/kn-nginx/log:/var/log/nginx:z\nVolume=kn-data:/data\nAddHost=cloud.home:10.1.0.5\n' \
+    "$tmp/pf/stack" "$tmp/pf/stack" "$tmp/pf/stack" "$tmp/pf/stack" > "$tmp/pf/b/quadlets/kn-nginx.container"
+echo "new config" > "$tmp/pf/b/kn-nginx/nginx.conf"; echo key > "$tmp/pf/b/kn-nginx/privkey.pem"
+echo "old config" > "$tmp/pf/stack/kn-nginx/nginx.conf"; echo key > "$tmp/pf/stack/kn-nginx/privkey.pem"
+cp "$tmp/pf/b/quadlets/kn-nginx.container" "$tmp/pf/q/kn-nginx.container"
+out=$(bash -c '
+set -euo pipefail
+. ./lib.sh
+t=$1; KS_BUNDLE_DIR=$t/b; KS_STACK_DIR=$t/stack; KS_QUADLET_DIR=$t/q; KS_PREFLIGHT_DIR=$t/run
+KS_STACK_RUNTIME=podman; KS_STACK_DIRS=(kn-nginx kn-nginx/log); KS_STACK_CHECKS=("kn-nginx|nginx -t")
+trap '"'"'echo "$BASH_COMMAND" >> "$t/trapped"; exit 1'"'"' ERR; set -E      # as the role runs it
+have=1; says=0      # (not rc: the function asked has a local of that name)
+timeout() { shift; "$@"; }      # the real one would run the real podman, not the stand-in
+podman() {
+    case $1 in
+        image) (( have )) ;;
+        run) shift; printf "%s\n" "$*" | sed "s#$t/run/kiwi-preflight\.[A-Za-z0-9]*#TMP#g; s#$t#T#g" > "$t/asked"
+             for a in "$@"; do [[ $a == *"/new/kn-nginx/nginx.conf:"* ]] && cat "${a%%:*}" >> "$t/asked"; done
+             echo "nginx: [emerg] unknown directive"; return $says ;;
+    esac
+}
+asked() { if [[ -e $t/asked ]]; then cat "$t/asked"; rm -f "$t/asked"; else echo "not asked"; fi; }
+echo "-- no image here"; have=0; ks_stack_preflight; asked; have=1
+echo "-- switched off"; KS_NO_PREFLIGHT=1 ks_stack_preflight; asked
+echo "-- it takes them"; ks_stack_preflight; asked
+echo "-- the question failed"; says=125; ks_stack_preflight 2>&1; rm -f "$t/asked"
+echo "-- it says no"; says=1; (ks_stack_preflight) 2>&1 || echo "stopped ($?)"; rm -f "$t/asked"
+echo "left behind: $(ls "$t/run" | wc -l), on the machine still: $(cat "$t/stack/kn-nginx/nginx.conf")"
+echo "-- nothing of it changes"; cp "$t/b/kn-nginx/nginx.conf" "$t/stack/kn-nginx/nginx.conf"; ks_stack_preflight; asked
+echo "-- only its quadlet changes"; echo "# x" >> "$t/q/kn-nginx.container"; says=0; ks_stack_preflight; asked | head -n 1 | cut -c1-25
+' _ "$tmp/pf" 2>&1)
+[[ ! -s $tmp/pf/trapped ]] || { echo "the role's error trap fired in the pre-flight: $(cat "$tmp/pf/trapped")"; exit 1; }
+[[ $out == "-- no image here
+not asked
+-- switched off
+not asked
+-- it takes them
+--rm --network none --sysctl net.ipv4.ip_nonlocal_bind=1 --security-opt label=disable -e KIWI_CHECK=1 -v TMP/new/kn-nginx/nginx.conf:/etc/nginx/nginx.conf:ro -v TMP/new/kn-nginx/privkey.pem:/etc/nginx/privkey.pem:ro -v T/stack/kn-nginx/acme:/etc/nginx/acme:O -v TMP/empty/kn-nginx/log:/var/log/nginx:O --add-host cloud.home:10.1.0.5 --entrypoint sh nginx:1 -c nginx -t
+new config
+-- the question failed
+warning: kn-nginx could not be asked about its new settings (exit 125): nginx: [emerg] unknown directive
+-- it says no
+nginx: [emerg] unknown directive
+error: kn-nginx would not start with its new settings (its own words above). The stack was not touched: every service runs as before. Correct the setting and apply again
+stopped (1)
+left behind: 0, on the machine still: old config
+-- nothing of it changes
+not asked
+-- only its quadlet changes
+--rm --network none --sys" ]] || { echo "pre-flight:"; echo "$out"; exit 1; }
 echo "kiwi-stack checks: ok"
