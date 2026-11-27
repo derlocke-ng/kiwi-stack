@@ -394,6 +394,7 @@ echo "-- it says no"; says=1; (ks_stack_preflight) 2>&1 || echo "stopped ($?)"; 
 echo "left behind: $(ls "$t/run" | wc -l), on the machine still: $(cat "$t/stack/kn-nginx/nginx.conf")"
 echo "-- nothing of it changes"; cp "$t/b/kn-nginx/nginx.conf" "$t/stack/kn-nginx/nginx.conf"; ks_stack_preflight; asked
 echo "-- only its quadlet changes"; echo "# x" >> "$t/q/kn-nginx.container"; says=0; ks_stack_preflight; asked | head -n 1 | cut -c1-25
+echo "-- an image without a shell"; KS_STACK_CHECKS=("kn-nginx|exec /sbin/prog configtest -c /f"); ks_stack_preflight; asked | head -n 1 | grep -o -- "--entrypoint.*"
 ' _ "$tmp/pf" 2>&1)
 [[ ! -s $tmp/pf/trapped ]] || { echo "the role's error trap fired in the pre-flight: $(cat "$tmp/pf/trapped")"; exit 1; }
 [[ $out == "-- no image here
@@ -413,5 +414,7 @@ left behind: 0, on the machine still: old config
 -- nothing of it changes
 not asked
 -- only its quadlet changes
---rm --network none --sys" ]] || { echo "pre-flight:"; echo "$out"; exit 1; }
+--rm --network none --sys
+-- an image without a shell
+--entrypoint /sbin/prog nginx:1 configtest -c /f" ]] || { echo "pre-flight:"; echo "$out"; exit 1; }
 echo "kiwi-stack checks: ok"
