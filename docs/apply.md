@@ -36,7 +36,9 @@ Everything it does is written to `/var/log/kiwi-server-role.log`.
    starts the host units and the timers the bundle asks for: a daily restart
    of the VPN client and a weekly update.
 8. **The check.** It runs `kiwi-stack verify`. Every container must be
-   running. If one is not, the apply fails and names it.
+   running. If one is not, the apply fails and names it. A container that
+   runs but fails its own health check is named as unhealthy; the apply does
+   not fail for that.
 
 ## Applying again
 

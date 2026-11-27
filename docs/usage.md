@@ -6,7 +6,7 @@ Every command runs on the machine, as root.
 |---|---|
 | `kiwi-stack apply DIR` | Installs the bundle in `DIR` and starts the stack. [What apply does](apply.md) lists the steps. |
 | `kiwi-stack status` | Shows the containers and the host units, and names every container that is not running. |
-| `kiwi-stack verify` | Checks that every container of the stack is running. It exits with 1 and their names when one is not. |
+| `kiwi-stack verify` | Checks that every container of the stack is running. It exits with 1 and their names when one is not. A container that runs but fails its own health check is named too ("unhealthy"); that alone is not a failure. |
 | `kiwi-stack start` | Starts the whole stack, then the host units. |
 | `kiwi-stack stop` | Stops the host units and the stack. |
 | `kiwi-stack restart` | Stops and starts the stack. |
