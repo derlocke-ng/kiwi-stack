@@ -274,37 +274,70 @@ ks_write() { mkdir -p "$(dirname "$1")"; cat > "$1.tmp"; ks_put "$1.tmp" "$1" "$
 ks_unit a.service <<<"[Unit]"; ks_unit a.service <<<"[Unit]"; ks_unit a.service <<<"[Unit] "
 echo "reloads $reloads"' _ "$tmp/put")
 [[ $out == $'wrote 1\nwrote 0 same inode yes\nwrote 1\nwrote 1 mode 600\nreloads 2' ]]
-# The stack's units start again when something of the stack changed or a container restarted, and
-# one by one when a unit is not fine; an apply that changed nothing leaves them
-out=$(KS_PENDING_UNITS=$tmp/units-pending bash -c '
+# The stack's units start again when a file of theirs changed (the unit, a script it runs, a file
+# beside it of the same name), when the stack started from nothing, when an earlier apply ended
+# before they ran, and one by one when a unit is not fine. A change elsewhere in the stack, a
+# restarted container, leaves them as they run. A changed host-side file no unit claims starts all.
+mkdir -p "$tmp/un/units" "$tmp/un/stack/kiwi/env" "$tmp/un/stack/kiwi/backup"
+printf '[Service]\nExecStart=/bin/sh %s/un/stack/kiwi/gw.sh start\n' "$tmp" > "$tmp/un/units/kn-gateway.service"
+printf '[Service]\nExecStart=/usr/bin/bash %s/un/stack/kiwi/cloud-accounts.sh\n' "$tmp" > "$tmp/un/units/kn-cloud-accounts.service"
+printf '[Service]\nExecStart=%s/un/stack/kiwi/backup.sh backup\n' "$tmp" > "$tmp/un/units/kn-backup.service"
+printf '[Timer]\nOnCalendar=daily\n' > "$tmp/un/units/kn-backup.timer"
+printf '[Service]\nExecStart=/bin/true\n' > "$tmp/un/units/kn-broken.service"
+out=$(KS_PENDING=$tmp/un/restart-pending bash -c '
 set -euo pipefail
 . ./lib.sh
+KS_SYSTEMD_DIR=$1/units; KS_STACK_DIR=$1/stack
 ks_say() { echo "say: $*"; }
 ks_warn() { echo "warn: $*"; }
 systemctl() {
     case $1 in
         enable) return 0 ;;
-        is-active) [[ $3 != kn-broken.service ]] ;;
+        is-active) [[ $3 != kn-broken.service && $3 != kn-backup.service ]] ;;
         show) echo "Result=exit-code"; echo "ExecMainStatus=1"; echo "ExecMainExitTimestampMonotonic=5" ;;
         restart) echo "restart ${*: -1}" ;;
     esac
 }
-KS_STACK_UNITS=(kn-gateway.service kn-setup.service kn-broken.service)
-echo "-- nothing changed"; ks_stack_units_start 0
-echo "-- a container restarted"; ks_stack_units_start 1
-echo "-- an earlier apply ended before its units ran"; : > "$KS_PENDING_UNITS"; ks_stack_units_start 0
-echo "marker left: $([[ -e $KS_PENDING_UNITS ]] && echo yes || echo no)"')
+KS_STACK_UNITS=(kn-gateway.service kn-cloud-accounts.service kn-backup.service kn-backup.timer kn-broken.service)
+run() { echo "-- $1"; shift; KS_CHANGED=("$@"); ks_stack_units_start 0 | grep -v "^say:" || true; }
+run "nothing changed"
+run "a container'"'"'s files changed" "$KS_STACK_DIR/kiwi/env/kn-vault.env" /etc/containers/systemd/kn-vault.container
+run "the sign-in set-up'"'"'s settings changed" "$KS_STACK_DIR/kiwi/cloud-accounts.env"
+run "the gateway'"'"'s unit changed" "$KS_SYSTEMD_DIR/kn-gateway.service"
+echo "-- and the same through the apply'"'"'s own note of it"; KS_STACK_FILES=(); KS_STACK_QUADLETS=(); KS_STACK_SERVICES=()
+KS_CHANGED=("$KS_STACK_DIR/kiwi/gw.sh"); ks_stack_note_pending; ks_stack_units_start 0 | grep -v "^say:" || true
+run "the backup'"'"'s settings changed" "$KS_STACK_DIR/kiwi/backup/restic.env"
+run "a host-side file no unit names" "$KS_STACK_DIR/kiwi/something-new.conf"
+echo "-- from nothing"; KS_CHANGED=(); ks_stack_units_start 1 | grep -c "^restart"
+echo "-- an earlier apply ended before its units ran"; : > "$(ks_pending_units)"; KS_STACK_FILES=(); KS_STACK_QUADLETS=(); KS_STACK_SERVICES=()
+ks_stack_note_pending; ks_stack_units_start 0 | grep -c "^restart"
+echo "marker left: $([[ -e $(ks_pending_units) ]] && echo yes || echo no)"' _ "$tmp/un")
 [[ $out == "-- nothing changed
 restart kn-broken.service
-say: 2 of the stack's units left as they run: nothing of the stack changed
--- a container restarted
-restart kn-gateway.service
-restart kn-setup.service
+-- a container's files changed
 restart kn-broken.service
+-- the sign-in set-up's settings changed
+restart kn-cloud-accounts.service
+restart kn-broken.service
+-- the gateway's unit changed
+restart kn-gateway.service
+restart kn-broken.service
+-- and the same through the apply's own note of it
+restart kn-gateway.service
+restart kn-broken.service
+-- the backup's settings changed
+restart kn-backup.service
+restart kn-broken.service
+-- a host-side file no unit names
+restart kn-gateway.service
+restart kn-cloud-accounts.service
+restart kn-backup.service
+restart kn-backup.timer
+restart kn-broken.service
+-- from nothing
+5
 -- an earlier apply ended before its units ran
-restart kn-gateway.service
-restart kn-setup.service
-restart kn-broken.service
+5
 marker left: no" ]]
 # The role's log is root's alone, and a trace (bash -x) is switched off before anything goes into
 # it: the script carries the stack's files in its variables
