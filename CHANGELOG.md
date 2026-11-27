@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.34 — an apply no longer cuts the containers' DNS
+
+- On a Podman machine with firewalld, every apply reloaded firewalld to open the stack's ports.
+  The reload dropped the stack network from the trusted sources (netavark adds it to the running
+  configuration only, when a container starts), the containers could no longer ask their DNS, and
+  two minutes later the reverse proxy answered 502 for every site until a restart. Seen on a
+  machine without the gateway module, which already kept that source. Ports go into the permanent
+  and the running configuration now, without a reload.
+- The stack network is kept as a permanent trusted source, so a reload by anything else does no
+  harm either; an apply puts it back on a machine a reload already hit.
+
 ## 0.9.33 — updates run again
 
 - `kiwi-stack update` called the backup module's script without its `backup` verb, so the script

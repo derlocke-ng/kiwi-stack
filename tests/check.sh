@@ -187,4 +187,34 @@ mkdir -p "$tmp/bf/kiwi"
 printf '#!/bin/sh\n[ "$1" = backup ] || { echo "usage: ..." >&2; exit 1; }\necho made\n' > "$tmp/bf/kiwi/backup.sh"
 chmod +x "$tmp/bf/kiwi/backup.sh"
 [[ $(STACK_DIR=$tmp/bf bash -c "$backup_first"$'\nbackup_first') == $'a backup first\nmade' ]]
+# firewalld: a port goes into the permanent and the running configuration, one already there is
+# left alone, and nothing reloads (a reload dropped the stack network from the trusted sources and
+# the containers lost their DNS, 0.9.34); the stack's subnets, read from its quadlets, are kept
+# as trusted sources in both
+mkdir -p "$tmp/fw/q"
+printf '[Network]\nNetworkName=knet-node\nSubnet=172.128.0.0/24\nGateway=172.128.0.1\n' > "$tmp/fw/q/knet-node.network"
+out=$(KS_QUADLET_DIR=$tmp/fw/q bash -c '
+set -euo pipefail
+. ./lib.sh
+ks_say() { :; }
+systemctl() { [[ $1 == is-active ]]; }
+firewall-cmd() {
+    local a=" $* "
+    case $a in
+        *" --query-port=443/tcp "*) return 0 ;;                      # there already, in both
+        *" --query-port="*|*" --query-source="*) return 1 ;;
+    esac
+    echo "$*"
+}
+KS_STACK_RUNTIME=podman
+ks_firewall_open 443/tcp 51820/udp 2456-2458/udp
+ks_firewall_trust_stack
+KS_STACK_RUNTIME=docker
+ks_firewall_trust_stack')
+[[ $out == "-q --permanent --add-port=51820/udp
+-q --add-port=51820/udp
+-q --permanent --add-port=2456-2458/udp
+-q --add-port=2456-2458/udp
+-q --permanent --zone=trusted --add-source=172.128.0.0/24
+-q --zone=trusted --add-source=172.128.0.0/24" ]]
 echo "kiwi-stack checks: ok"
