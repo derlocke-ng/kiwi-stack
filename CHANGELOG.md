@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.40 — a part is asked before its new files are written
+
+- **`KS_STACK_CHECKS`** (`container|command`): before an apply writes anything of the stack, the
+  command runs in a throwaway container made like the named one will be: its image, its mounts,
+  its names, no network, nothing it writes kept. The files the apply brings are mounted from a
+  copy, the rest from the machine. A command that fails stops the apply there: "kn-nginx would
+  not start with its new settings", with the part's own words, and every service runs as
+  before. Until now an nginx that refused its config was found when it did not start again,
+  with every site of the machine gone. Not asked when the image is not on the machine yet or
+  when nothing of that container changes (no cost for an apply that leaves it alone); a
+  question that fails by itself (podman, time) is a warning. Podman only.
+  `KS_NO_PREFLIGHT=1` leaves the questions out.
+
 ## 0.9.39 — no false alarm from a unit that names no script
 
 - 0.9.38's look for a unit's own files failed in a subshell for every unit that names no script

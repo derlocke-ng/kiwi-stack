@@ -22,6 +22,7 @@ start with `KS_`.
 | `KS_STACK_PORTS`, `KS_STACK_SYSCTL`, `KS_STACK_KMODS` | The ports to open, the kernel settings and the kernel modules. |
 | `KS_STACK_VPN_CONTAINER`, `KS_STACK_VPN_DEPENDENTS`, `KS_STACK_MESH_SUBNET`, `KS_STACK_MESH_VIA`, `KS_STACK_HOSTS`, `KS_STACK_DNS_IP`, `KS_STACK_NO_RESOLVED_STUB` | The network: the VPN client and what depends on it, the route into the mesh, the names for `/etc/hosts`, and the stack's resolver. |
 | `KS_STACK_URLS` | The addresses to print after the start. |
+| `KS_STACK_CHECKS` | Questions asked before the stack is written (`container|command`, podman only): the command runs with `sh -c` in a throwaway container made like the named one will be (its image, its mounts, its names), without a network, with the new files mounted from a copy. A command that fails stops the apply while every file and container is still as before. Not asked when the image is not on the machine yet or nothing of that container changes. `KS_NO_PREFLIGHT=1` leaves the questions out. |
 | `KS_STACK_AUTO_UPDATE` | Whether images are updated from the registry. |
 | `KS_SEED_ID`, `KS_SEED_FROM` | The short name of the seed, and of the seed it replaced when there is one. |
 
