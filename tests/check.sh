@@ -204,11 +204,13 @@ set -euo pipefail
 . ./lib.sh
 ks_say() { :; }
 systemctl() { [[ $1 == is-active ]]; }
+busctl() { return 1; }          # (never the firewalld of this computer) not on D-Bus: firewall-cmd is asked
 firewall-cmd() {
     local a=" $* "
     case $a in
         *" --list-ports "*) echo "443/tcp 80/tcp"; return 0 ;;       # 443 is there already, in both
-        *" --query-source="*) return 1 ;;
+        *" --list-sources "*) return 0 ;;                            # nothing trusted yet
+        *" --get-default-zone "*) echo public; return 0 ;;
     esac
     echo "$*"
 }
@@ -477,4 +479,50 @@ echo "-- an install of something missing"; KS_APT_UPDATED=0; dpkg-query() { retu
 apt-get update
 -- an install of something missing
 apt-get update apt-get some-package " ]] || { echo "apt lists:"; echo "$out"; exit 1; }
+# firewalld is asked over D-Bus (busctl), and only what is missing is added with firewall-cmd; where
+# busctl does not answer, firewall-cmd is asked as before. Under the role's error trap
+mkdir -p "$tmp/fw"
+out=$(bash -c '
+set -euo pipefail
+. ./lib.sh
+t=$1; KS_STACK_RUNTIME=podman; KS_STACK_MESH_SUBNET=10.9.0.0/16; KS_STACK_MESH_VIA=kn-vpn-client
+trap '"'"'echo "$BASH_COMMAND" >> "$t/trapped"; exit 1'"'"' ERR; set -E
+bus=1
+systemctl() { return 0; }; ks_say() { echo "say: $*"; }
+ks_stack_subnets() { printf "172.128.0.0/24\n172.129.0.0/24\n"; }
+busctl() {
+    (( bus )) || return 1
+    case "$*" in
+        *getDefaultZone*) echo "s \"FedoraServer\"" ;;
+        *getZoneByName\ s\ trusted*) echo "o \"/org/fedoraproject/FirewallD1/config/zone/10\"" ;;
+        *getZoneByName\ s\ FedoraServer*) echo "o \"/org/fedoraproject/FirewallD1/config/zone/0\"" ;;
+        *zone/10*getSources*) echo "as 2 \"10.9.0.0/16\" \"172.128.0.0/24\"" ;;
+        *zone/0*getPorts*) echo "a(ss) 1 \"80\" \"tcp\"" ;;
+        *FirewallD1.zone\ getSources\ s\ trusted*) echo "as 1 \"172.128.0.0/24\"" ;;
+        *FirewallD1.zone\ getPorts\ s\ FedoraServer*) echo "aas 2 2 \"80\" \"tcp\" 2 \"443\" \"tcp\"" ;;
+        *) echo "as 0" ;;
+    esac
+}
+firewall-cmd() {
+    case "$*" in
+        *--list-sources*) [[ $* == *--permanent* ]] && echo "10.9.0.0/16 172.128.0.0/24 172.129.0.0/24" || echo "172.128.0.0/24 172.129.0.0/24 10.9.0.0/16" ;;
+        *--list-ports*) echo "80/tcp 443/tcp" ;;
+        *--get-default-zone*) echo public ;;
+        *) echo "firewall-cmd $*" ;;
+    esac
+}
+echo "-- over D-Bus"; ks_firewall_trust_stack; ks_fw_trust_mesh_source; ks_firewall_open 80/tcp 443/tcp
+echo "-- without it"; bus=0; ks_firewall_trust_stack; ks_fw_trust_mesh_source; ks_firewall_open 80/tcp 443/tcp
+' _ "$tmp/fw" 2>&1)
+[[ ! -s $tmp/fw/trapped ]] || { echo "the error trap fired in the firewall steps: $(cat "$tmp/fw/trapped")"; exit 1; }
+[[ $out == "-- over D-Bus
+say: firewalld: the stack network 172.129.0.0/24 stays trusted across a reload
+firewall-cmd -q --permanent --zone=trusted --add-source=172.129.0.0/24
+firewall-cmd -q --zone=trusted --add-source=172.129.0.0/24
+say: firewalld: the mesh 10.9.0.0/16 is trusted like the stack network
+firewall-cmd -q --permanent --zone=trusted --add-source=10.9.0.0/16
+firewall-cmd -q --zone=trusted --add-source=10.9.0.0/16
+firewall-cmd -q --permanent --add-port=443/tcp
+-- without it" ]] || { echo "firewall:"; echo "$out"; exit 1; }
+# (without busctl, firewall-cmd's own lists: everything is there, nothing is added)
 echo "kiwi-stack checks: ok"
