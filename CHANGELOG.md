@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.45 — firewalld is asked over D-Bus
+
+- The firewall steps of an apply asked firewalld up to seven times with `firewall-cmd`, which
+  starts Python each time: 0.7 s per question on a small machine. They ask over D-Bus now
+  (`busctl`, a hundredth of a second), and `firewall-cmd` only where busctl does not answer and
+  for what has to be added. An apply that changes nothing on a uCore machine: the role 9.9 s
+  became 7.1 s. Drilled: `tests/drills/firewall-reload.sh` of kiwi-server (an apply, then a
+  reload of firewalld by hand; the stack network stays trusted and the sites are served).
+- The firewall checks no longer ask this computer's own firewalld when busctl is there.
+
 ## 0.9.44 — Debian's package lists once a day, not with every apply
 
 - Every apply of a Debian machine fetched the package lists again (`apt-get update`), with
