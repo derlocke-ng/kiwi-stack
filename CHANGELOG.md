@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.9.43 — an apply that changes nothing no longer makes systemd read its units again
+
+- Every `systemctl daemon-reload` makes systemd read all its units again: a quarter of a second
+  on a small virtual machine, 0.8 s on a server with many units, a second and a half on a Rock
+  Pi. `systemctl enable` and `disable` do the same each time, changed or not. A role that
+  changed nothing did it ten times. Now: a unit is enabled only when it is not yet
+  (`ks_enable`), disabled only when it is there (`ks_disable`), and systemd reads its units
+  again only when a unit or quadlet was written or removed, or when a file under the units'
+  folders is newer than this tool's last reload (`ks_reload`; someone else wrote a unit, or
+  the machine started since).
+- The quadlets are written first and the ones no module has any more removed after. Until now
+  every quadlet was removed and written anew with each apply, so each apply had to make systemd
+  read them again.
+- `kiwi-stack up` leaves its own reload out when an apply calls it (`KS_RELOADED`).
+- Measured with kiwi-server's own steps changed the same way (2.321.0), an apply that changes
+  nothing: 17 reloads became none; 67 s became 43 s on a Rock Pi E, 29 s became 21 s and 14 s
+  became 10 s on two virtual machines.
+
 ## 0.9.42 — a question for an image without a shell
 
 - `KS_STACK_CHECKS`: a command written as `exec PROGRAM ARGS` runs the program itself in the
