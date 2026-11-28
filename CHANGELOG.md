@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.44 — Debian's package lists once a day, not with every apply
+
+- Every apply of a Debian machine fetched the package lists again (`apt-get update`), with
+  nothing to install: 18 of an apply's 43 seconds on a Rock Pi E, a few seconds on a virtual
+  machine. Now once a day (`ks_apt_fresh`, a mark in the state folder); a first apply and any
+  install of a missing package fetch them as before. An apply that changes nothing on the
+  Rock Pi: 43 s became 24 s.
+
 ## 0.9.43 — an apply that changes nothing no longer makes systemd read its units again
 
 - Every `systemctl daemon-reload` makes systemd read all its units again: a quarter of a second
