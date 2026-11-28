@@ -90,6 +90,32 @@ ks_stack_remember; ks_stack_compare                             # the next run: 
 [[ -z $(ks_stack_changed_services) ]]
 [[ $(ks_stack_restart_due | tr "\n" " ") == "kn-pihole kn-portainer kn-vault " ]]
 '
+# a file its part reads again by itself (a module's live output: the DNS names in dnsmasq's
+# hostsdir) restarts nothing when it changes; another file in the same mounted folder still does
+KS_TMP=$tmp bash -c '
+set -euo pipefail
+. ./lib.sh
+d=$KS_TMP/live; q=$d/quadlets; mkdir -p "$d/stack/kn-pihole/names" "$q"
+KS_STACK_DIR=$d/stack KS_QUADLET_DIR=$q
+KS_STACK_SERVICES=(kn-pihole)
+KS_STACK_FILES=("kn-pihole/names/kiwi.hosts:0644" "kn-pihole/names/other:0644")
+KS_STACK_LIVE=("kn-pihole/names/kiwi.hosts")
+KS_STACK_QUADLETS=(kn-pihole.container)
+for f in kn-pihole/names/kiwi.hosts kn-pihole/names/other; do echo old > "$d/stack/$f"; done
+printf "Volume=%s:/etc/kiwi-names:ro,z\n" "$d/stack/kn-pihole/names" > "$q/kn-pihole.container"
+trap '\''echo "ERR trap: $BASH_COMMAND" >&2; exit 9'\'' ERR; set -E      # as the role script runs it
+ks_stack_remember
+echo "10.9.0.7 new.home" > "$d/stack/kn-pihole/names/kiwi.hosts"
+ks_stack_compare
+[[ -z $(ks_stack_changed_services) ]]                         # a new name: Pi-hole goes on running
+[[ ${KS_LIVE_CHANGED[*]##*/} == kiwi.hosts && -z ${KS_CHANGED[*]:-} ]]
+echo new > "$d/stack/kn-pihole/names/other"
+ks_stack_compare
+[[ $(ks_stack_changed_services) == kn-pihole ]]
+unset KS_STACK_LIVE                                           # the manifest of an older kiwi-server
+ks_stack_remember; echo "10.9.0.8 new.home" > "$d/stack/kn-pihole/names/kiwi.hosts"; ks_stack_compare
+[[ $(ks_stack_changed_services) == kn-pihole ]]
+'
 # a service asleep (a game server nobody plays on) is not down; a stopped one without the mark is
 bash -c '
 set -euo pipefail
