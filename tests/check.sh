@@ -460,4 +460,21 @@ enable one that is not: enable -q off.service
 enable --now one that is not: enable -q off.timer start off.timer
 disable one that is not there: nothing
 disable --now one that runs: disable -q --now on.service" ]] || { echo "reloads:"; echo "$out"; exit 1; }
+# Debian's package lists are fetched once a day, not with every apply; an install still fetches them
+mkdir -p "$tmp/apt"
+out=$(bash -c '
+set -euo pipefail
+. ./lib.sh
+KS_STATE_DIR=$1; KS_OS=debian
+apt-get() { echo "apt-get ${*: -1}"; }
+ks_apt_fresh; echo "-- again"; KS_APT_UPDATED=0; ks_apt_fresh
+echo "-- a day later"; touch -d "25 hours ago" "$KS_STATE_DIR/apt-lists"; ks_apt_fresh
+echo "-- an install of something missing"; KS_APT_UPDATED=0; dpkg-query() { return 1; }; ks_apt some-package | tr "\n" " "
+' _ "$tmp/apt" 2>&1)
+[[ $out == "apt-get update
+-- again
+-- a day later
+apt-get update
+-- an install of something missing
+apt-get update apt-get some-package " ]] || { echo "apt lists:"; echo "$out"; exit 1; }
 echo "kiwi-stack checks: ok"
