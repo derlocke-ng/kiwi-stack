@@ -417,4 +417,47 @@ not asked
 --rm --network none --sys
 -- an image without a shell
 --entrypoint /sbin/prog nginx:1 configtest -c /f" ]] || { echo "pre-flight:"; echo "$out"; exit 1; }
+# systemd reads its units again only when one was written or removed, and a unit is enabled only
+# when it is not yet: `systemctl enable` makes systemd read everything again each time
+mkdir -p "$tmp/rl/units" "$tmp/rl/run"
+out=$(bash -c '
+set -euo pipefail
+. ./lib.sh
+d=$1; me=$(id -un):$(id -gn); KS_SYSTEMD_DIR=$d/units; KS_RELOAD_MARK=$d/run/units-read
+said=()
+systemctl() {
+    case "$*" in
+        daemon-reload) said+=(reload) ;;
+        "is-enabled -q on.service"|"is-active -q on.service") return 0 ;;
+        "is-enabled -q "*|"is-active -q "*) return 1 ;;
+        *) said+=("$*") ;;
+    esac
+}
+ks_write() { mkdir -p "$(dirname "$1")"; cat > "$1.tmp"; ks_put "$1.tmp" "$1" "${2:-0644}" "$me"; }
+show() { echo "$1: ${said[*]:-nothing}"; said=(); }
+ks_reload; show "nothing written"
+ks_unit a.service <<<"[Unit]"; show "a unit written"
+ks_unit a.service <<<"[Unit]"; show "the same again"
+ks_reload all; show "all, after its own reload"
+sleep 1.1; echo x > "$d/units/foreign.service"; ks_reload all; show "all, after someone else wrote a unit"
+ks_reload all; show "all again"
+ks_enable on.service; show "enable one that is"
+ks_enable --now on.service; show "enable --now one that is and runs"
+ks_enable off.service; show "enable one that is not"
+ks_enable --now off.timer; show "enable --now one that is not"
+ks_disable off.service; show "disable one that is not there"
+ks_disable --now on.service; show "disable --now one that runs"
+' _ "$tmp/rl" 2>&1)
+[[ $out == "nothing written: nothing
+a unit written: reload
+the same again: nothing
+all, after its own reload: nothing
+all, after someone else wrote a unit: reload
+all again: nothing
+enable one that is: nothing
+enable --now one that is and runs: nothing
+enable one that is not: enable -q off.service
+enable --now one that is not: enable -q off.timer start off.timer
+disable one that is not there: nothing
+disable --now one that runs: disable -q --now on.service" ]] || { echo "reloads:"; echo "$out"; exit 1; }
 echo "kiwi-stack checks: ok"
