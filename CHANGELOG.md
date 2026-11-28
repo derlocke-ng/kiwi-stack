@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.46 — a file a part reads by itself restarts nothing
+
+- A module can mark a file it renders as read again by its running part (`live`, carried in the
+  manifest as `KS_STACK_LIVE`). Its change is noted (`read again while running:` beside the
+  times) and restarts no container, though the container mounts it; any other changed file in
+  the same folder still does. kiwi-modules 0.140.0 gives the DNS names this way: before, a new
+  or removed site restarted Pi-hole on every DNS machine of the network. A manifest without
+  the list (an older kiwi-server) restarts as before.
+
 ## 0.9.45 — firewalld is asked over D-Bus
 
 - The firewall steps of an apply asked firewalld up to seven times with `firewall-cmd`, which
